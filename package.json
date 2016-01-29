@@ -1,0 +1,20 @@
+{
+  "name": "CoopWeb",
+  "repository": "https://github.com/notfalsey/coopweb/",
+  "dependencies": {
+    "async": "^1.5.2",
+    "bunyan": "^1.5.1",
+    "express": "^4.13.4",
+    "fs-extra": "^0.26.5",
+    "i2c": "0.2.1"
+  },
+  "scripts": {
+    "start": "node server/src/Server.js"
+  },
+  "devDependencies": {
+    "bower": "^1.7.7",
+    "grunt": "^0.4.5",
+    "grunt-bower-task": "^0.4.0",
+    "grunt-contrib-jshint": "^0.12.0"
+  }
+}
