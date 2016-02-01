@@ -6,13 +6,15 @@ var express = require('express'),
 	props = require('./Properties.js'),
 	log = require('./logger.js')();
 
-function configure (app) {
+function configure (app, config) {
 	app.use(express.static(props.getStaticFilesDir()));
+    require('./routes/coop.js')(app, '/coop', config);
 }
 
 function CoopApp() {
+    this.config = fs.readJsonSync(props.getConfigJson());
 	this.app = express();
-	configure(this.app);
+	configure(this.app, this.config);
 }
 
 CoopApp.prototype = {
@@ -22,13 +24,11 @@ CoopApp.prototype = {
             key: fs.readFileSync(keyPath),
             cert: fs.readFileSync(certPath)
         };
-
-        var config = fs.readJsonSync(props.getConfigJson());
-
+        var self = this;
         var httpsServer = https.createServer(options, this.app).listen(
-            config.httpsPort,
+            self.config.httpsPort,
             function(err) {
-                var mesg = 'HTTPS server listening on *:' + config.httpsPort;
+                var mesg = 'HTTPS server listening on *:' + self.config.httpsPort;
                 console.warn(mesg);
                 log.info(mesg);
                 if (callback) {
