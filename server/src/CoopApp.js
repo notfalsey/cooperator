@@ -9,6 +9,7 @@ var express = require('express'),
 function configure (app, config) {
 	app.use(express.static(props.getStaticFilesDir()));
     require('./routes/coop.js')(app, '/coop', config);
+    require('./routes/weather.js')(app, '/weather', config);
 }
 
 function CoopApp() {

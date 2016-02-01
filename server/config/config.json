@@ -2,6 +2,7 @@
 	"httpsPort": 9443,
 	"state": "NC",
 	"city": "Carrboro",
+	"wundergroundApiKey": "?",
 	"sunriseDelta": 0,
 	"sunsetDelta": 0,
 	"i2cAddress": 5
