@@ -2,7 +2,8 @@ var i2c = require('i2c'),
 	log = require('./logger.js')();
 
 function CoopController(config) {
-	this.address = 0x05;
+	this.i2cAddress = 0x05;
+	log.debug({address: this.i2cAddress}, 'Joining i2C bus');
 	this.wire = new i2c(config.i2cAddress, {device: '/dev/i2c-1', debug: false}); // point to your i2c address, debug provides REPL interface
 	this.messageInProgress = false;
 }
@@ -11,6 +12,7 @@ CoopController.prototype = {
 	sendCommand: function(command, args, callback) {
 		var self = this;
 		if(!self.messageInProgress) {
+			log.debug({command: command, args: args}, 'Sending i2C command');
 			self.messageInProgress = true;
 			self.wire.writeBytes(command, args, function(err) {
 				if(err) {
