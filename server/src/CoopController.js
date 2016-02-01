@@ -20,7 +20,7 @@ CoopController.prototype = {
 					callback(new Error(msg));
 				} else {
 					setTimeout(function() {
-						wire.read(4, function(err, readBytes) {
+						self.wire.read(4, function(err, readBytes) {
 							self.messageInProgress = false;
 							if(err) {
 								var msg = 'Error reading data from i2c bus';
@@ -42,31 +42,31 @@ CoopController.prototype = {
 		}
 	},
 	echo: function(args, callback) {
-		sendCommand(0, args, callback);
+		this.sendCommand(0, args, callback);
 	},
 	reset: function(callback) {
-		sendCommand(1, [], callback);
+		this.sendCommand(1, [], callback);
 	},
 	readTemp: function(callback) {
-		sendCommand(2, [], callback);
+		this.sendCommand(2, [], callback);
 	},
 	readLight: function(callback) {
-		sendCommand(3, [], callback);
+		this.sendCommand(3, [], callback);
 	},
 	readDoor: function(callback) {
-		sendCommand(4, [], callback);
+		this.sendCommand(4, [], callback);
 	},
 	closeDoor: function(callback) {
-		sendCommand(5, [], callback);
+		this.sendCommand(5, [], callback);
 	},
 	openDoor: function(callback) {
-		sendCommand(6, [], callback);
+		this.sendCommand(6, [], callback);
 	},
 	autoDoor: function(callback) {
-		sendCommand(7, [], callback);
+		this.sendCommand(7, [], callback);
 	},
-	upTime: function(callback) {
-		sendCommand(8, [], callback);
+	readUptime: function(callback) {
+		this.sendCommand(8, [], callback);
 	}
 };
 

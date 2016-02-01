@@ -65,7 +65,7 @@ function setup(app, url, config) {
 		});
 	});
 
-	app.routeg(url + '/door')
+	app.route(url + '/door')
 	.get(function(req, res) {
 		controller.readDoor(function(err, door) {
 			if(err) {
