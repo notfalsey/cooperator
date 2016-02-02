@@ -45,7 +45,7 @@ var Properties = {
     },
 
     getLogFile: function() {
-    	return path.join(this.getServerDir(), 'coop.log');
+    	return path.join(this.getLogsDir(), 'coop.log');
     }
 };
 

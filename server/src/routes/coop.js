@@ -1,12 +1,10 @@
 
 'use strict';
 
-var CoopController = require('../CoopController.js'),
-	log = require('../logger.js')();
+var log = require('../logger.js')();
 
-function setup(app, url, config) {
-	var controller = new CoopController(config);
-
+function setup(app, url, controller) {
+	
 	app.put(url + '/reset', function(req, res) {
 		controller.reset(function(err) {
 				var msg;
@@ -63,6 +61,22 @@ function setup(app, url, config) {
 			}
 			res.end();
 		});
+	});
+
+	app.get(url + '/closetime', function(req, res) {
+		var closingMinutes = controller.getClosingTime();
+		var hour = Math.floor(closingMinutes / 60);
+		var minute = closingMinutes % 60;
+		res.status(200).json({hour: hour, minute: minute});
+		res.end();
+	});
+
+	app.get(url + '/opentime', function(req, res) {
+		var openingMinutes = controller.getOpeningTime();
+		var hour = Math.floor(openingMinutes / 60);
+		var minute = openingMinutes % 60;
+		res.status(200).json({hour: hour, minute: minute});
+		res.end();
 	});
 
 	app.route(url + '/door')

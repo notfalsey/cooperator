@@ -2,8 +2,14 @@
 	"httpsPort": 9443,
 	"state": "NC",
 	"city": "Carrboro",
-	"wundergroundApiKey": "?",
-	"sunriseDelta": 0,
-	"sunsetDelta": 0,
-	"i2cAddress": 5
+	"wundergroundApiKey": "cd8f3fac7f0f516b",
+	"sunriseDeltaMinutes": 0,
+	"sunsetDeltaMinutes": 0,
+	"i2cAddress": 5,
+	"coopPollingInterval": 300,
+	"logging": {
+        "level": "trace",
+        "count": 10,
+        "size": 100000
+    }
 }

@@ -4,12 +4,16 @@ var express = require('express'),
 	fs = require('fs-extra'),
 	https = require('https'),
 	props = require('./Properties.js'),
+    CoopController = require('./CoopController.js'),
+    WeatherService = require('./WeatherService.js'),
 	log = require('./logger.js')();
 
 function configure (app, config) {
 	app.use(express.static(props.getStaticFilesDir()));
-    require('./routes/coop.js')(app, '/coop', config);
-    require('./routes/weather.js')(app, '/weather', config);
+    var weatherService = new WeatherService(config);
+    var coopController = new CoopController(config, weatherService);
+    require('./routes/coop.js')(app, '/coop', coopController);
+    require('./routes/weather.js')(app, '/weather', weatherService);
 }
 
 function CoopApp() {
