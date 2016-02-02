@@ -2,7 +2,7 @@
 	"httpsPort": 9443,
 	"state": "NC",
 	"city": "Carrboro",
-	"wundergroundApiKey": "cd8f3fac7f0f516b",
+	"wundergroundApiKey": "?",
 	"sunriseDeltaMinutes": 0,
 	"sunsetDeltaMinutes": 0,
 	"i2cAddress": 5,
