@@ -8,8 +8,14 @@ angular.module(appName)
 	function($scope, $interval, coopService) {
 		$scope.openTime = '?';
 		$scope.closeTime = '?';
-		$scope.doorState = '?';
-		$scope.doorStateOk = null;
+		$scope.doorStates = {
+			danger: 'danger',
+			ok: 'ok',
+			transitioning: 'transitioning',
+			error: 'error'
+		};
+		$scope.doorState = 'unknown';
+		$scope.doorHealth = $scope.doorStates.transitioning;
 		$scope.uptime = '?';
 		$scope.light = '?';
 		$scope.nextOpMessage = '';
@@ -18,21 +24,21 @@ angular.module(appName)
 			coopService.getClosingTime(function(err, closeTime) {
 				if(err) {
 					$scope.closeTime = 'error';
-					$scope.doorStateOk = false;
+					$scope.doorHealth = $scope.doorStates.ok;
 				} else {
 					$scope.closeTime = closeTime;	
 				}
 				coopService.getOpeningTime(function(err, openTime) {
 					if(err) {
 						$scope.openTime = 'error';
-						$scope.doorStateOk = false;
+						$scope.doorHealth = $scope.doorStates.error;
 					} else {
 						$scope.openTime = openTime;	
 					}
 					coopService.getDoorState(function(err, doorState) {
 						if(err) {
 							$scope.doorState = 'error';
-							$scope.doorStateOk = false;
+							$scope.doorHealth = $scope.doorStates.error;
 						} else {
 							$scope.doorState = doorState;	
 							var currentTime = new Date();
@@ -44,7 +50,7 @@ angular.module(appName)
 
 							if(doorState === 'closed') {
 								if(currentMinutes <= openMinutes || currentMinutes >= closeMinutes) {
-									$scope.doorStateOk = true;
+									$scope.doorHealth = $scope.doorStates.ok;
 									if(currentTime.getHours() < closeTime.hour) {
 										// morning time
 										deltaHours = Math.floor((openMinutes - currentMinutes) / 60);
@@ -58,18 +64,20 @@ angular.module(appName)
 									}
 									$scope.nextOpMessage = 'Opening in ' + deltaHours + ' hours and ' + deltaMins + ' minutes';
 								} else {
-									$scope.doorStateOk = false;
+									$scope.doorHealth = $scope.doorStates.danger;
 								}
-							} else {
+							} else if(doorState === 'open') {
 								if(currentMinutes >= openMinutes && currentMinutes <= closeMinutes) {
-									$scope.doorStateOk = true;
+									$scope.doorHealth = $scope.doorStates.ok;
 									deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
 									deltaMins = (closeMinutes - currentMinutes) % 60;
 
 									$scope.nextOpMessage = 'Closing in ' + deltaHours + ' hours and ' + deltaMins + ' minutes';
 								} else {
-									$scope.doorStateOk = false;
+									$scope.doorHealth = $scope.doorStates.danger;
 								}
+							} else {
+								$scope.doorHealth = $scope.doorStates.transitioning;
 							}
 						}
 					});

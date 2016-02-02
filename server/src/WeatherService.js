@@ -12,13 +12,14 @@ function WeatherService(config) {
 
 WeatherService.prototype = {
 	refresh: function() {
+		log.info('Refreshing weather data');
 		var self = this;
 		self.getData(self.astronomyUrl, function(err, data) {
 			if(err) {
 				log.error('Error retrieving astrology data');
 			} else {
 				self.astronomyData = data;
-				log.debug({data: self.astronomyData}, 'Read astronomy data');
+				log.info({data: self.astronomyData}, 'Read astronomy data');
 			}
 		});
 	},

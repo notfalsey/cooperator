@@ -1,24 +1,36 @@
 <div ng-controller="coopApp.coopController">
-	<div>Opening time: {{openTime.hour}}:{{openTime.minute}} </div>
-	<div>Closing time: {{closeTime.hour}}:{{closeTime.minute}} </div>
-	<div>Door state: <span ng-show="doorStateOk===true" class="label label-success">{{doorState}}</span>
-					 <span ng-show="doorStateOk===false" class="label label-danger">{{doorState}}</span>
+	<div class="row">
+		<div class="col-xs-8 col-md-6">
+			<div>Opening time: {{openTime.hour}}:{{openTime.minute}} </div>
+			<div>Closing time: {{closeTime.hour}}:{{closeTime.minute}} </div>
+			<div>Door state: <span ng-show="doorHealth===doorStates.ok" class="label label-success">{{doorState}}</span>
+							 <span ng-show="doorHealth===doorStates.transitioning" class="label label-warning">{{doorState}}</span>
+							 <span ng-show="doorHealth===doorStates.danger" class="label label-danger">{{doorState}}</span>
+			</div>
+			<div>Light: {{light}}</div>
+			<div>Uptime: {{uptime}}</div>
+			<div>{{nextOpMessage}}</div>
+		</div>
+		<div class="col-xs-4 col-md-6">
+			<img height="200" src="/src/img/chick.jpg"></img>
+		</div>
 	</div>
-	<div>Light: {{light}}</div>
-	<div>Uptime: {{uptime}}</div>
-	<div>{{nextOpMessage}}</div>
 
 	<br/>
 
-	<div>
-		<button type="button" class="btn btn-primary navbar-btn" ng-click="closeDoor()">Close</button>
-		<button type="button" class="btn btn-primary navbar-btn" ng-click="openDoor()">Open</button>
+	<div class="row">
+		<div class="col-xs-8 col-md-6">
+			<button type="button" class="btn btn-primary navbar-btn" ng-disabled="doorState!=='open'" ng-click="closeDoor()">Close</button>
+			<button type="button" class="btn btn-primary navbar-btn" ng-disabled="doorState!=='closed'" ng-click="openDoor()">Open</button>
+		</div>
 	</div>
 
 	<br/>
 
-	<div>
-		<button type="button" class="btn btn-default navbar-btn" ng-click="reset()">Reset</button>
+	<div class="row">
+		<div class="col-xs-8 col-md-6">
+			<button type="button" class="btn btn-default navbar-btn" ng-click="reset()">Reset</button>
+		</div>
 	</div>
 
 </div>
