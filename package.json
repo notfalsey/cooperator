@@ -3,6 +3,7 @@
   "repository": "https://github.com/notfalsey/coopweb/",
   "dependencies": {
     "async": "^1.5.2",
+    "body-parser": "^1.14.2",
     "bunyan": "^1.5.1",
     "express": "^4.13.4",
     "fs-extra": "^0.26.5",

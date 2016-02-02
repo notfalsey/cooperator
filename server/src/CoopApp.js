@@ -1,6 +1,7 @@
 'use strict';
 
-var express = require('express'),
+var bodyParser = require('body-parser'),
+    express = require('express'),
 	fs = require('fs-extra'),
 	https = require('https'),
 	props = require('./Properties.js'),
@@ -10,6 +11,7 @@ var express = require('express'),
 
 function configure (app, config) {
 	app.use(express.static(props.getStaticFilesDir()));
+    app.use(bodyParser.json()); // for parsing application/json
     var weatherService = new WeatherService(config);
     var coopController = new CoopController(config, weatherService);
     require('./routes/coop.js')(app, '/coop', coopController);

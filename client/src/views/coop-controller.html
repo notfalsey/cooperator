@@ -1,23 +1,24 @@
 <div ng-controller="coopApp.coopController">
 	<div>Opening time: {{openTime.hour}}:{{openTime.minute}} </div>
 	<div>Closing time: {{closeTime.hour}}:{{closeTime.minute}} </div>
-	<div>Door state: <span ng-show="doorStateOk===false" style="color: red; font-weight: bold">{{doorState}}</span>
-					 <span ng-show="doorStateOk===true" style="color: green; font-weight: bold">{{doorState}}</span>
+	<div>Door state: <span ng-show="doorStateOk===true" class="label label-success">{{doorState}}</span>
+					 <span ng-show="doorStateOk===false" class="label label-danger">{{doorState}}</span>
 	</div>
 	<div>Light: {{light}}</div>
 	<div>Uptime: {{uptime}}</div>
+	<div>{{nextOpMessage}}</div>
 
 	<br/>
 
 	<div>
-		<button ng-click="closeDoor()">Close</button>
-		<button ng-click="openDoor()">Open</button>
+		<button type="button" class="btn btn-primary navbar-btn" ng-click="closeDoor()">Close</button>
+		<button type="button" class="btn btn-primary navbar-btn" ng-click="openDoor()">Open</button>
 	</div>
 
 	<br/>
-	
+
 	<div>
-		<button ng-click="reset()">Reset</button>
+		<button type="button" class="btn btn-default navbar-btn" ng-click="reset()">Reset</button>
 	</div>
 
 </div>
