@@ -13,7 +13,7 @@ var Properties = {
     },
 
     getStaticFilesDir: function() {
-    	return path.join(this.getClientDir(), 'src');
+    	return path.join(this.getClientDir());
     },
 
     getServerDir: function() { 

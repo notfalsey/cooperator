@@ -1,0 +1,12 @@
+<div ng-controller="coopApp.coopController">
+	<div>Opening time: {{openTime.hour}}:{{openTime.minute}} </div>
+	<div>Closing time: {{closeTime.hour}}:{{closeTime.minute}} </div>
+	<div>Door state: {{doorState}}</div>
+	<div>Light: {{light}}</div>
+	<div>Uptime: {{uptime}}</div>
+
+	<br/>
+
+	<button ng-onclick="closeDoor()">Close</button>
+	<button ng-onclick="openDoor()">Open</button>
+</div>

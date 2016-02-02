@@ -10,7 +10,7 @@ function CoopController(config, weatherService) {
 	this.sunsetDeltaMinutes = config.sunsetDeltaMinutes;
 	this.sunriseDeltaMinutes = config.sunriseDeltaMinutes;
 	this.weatherService = weatherService;
-	this.checkCoop();
+	setTimeout(this.checkCoop.bind(this), 1000);
 
 	setInterval(this.checkCoop.bind(this), config.coopPollingInterval * 1000);
 }
