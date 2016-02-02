@@ -66,18 +66,6 @@ angular.module(appName)
 		getCoopData('opentime', callback);
 	};
 
-	var getCoopData = function(valueName, callback) {
-		$http.get(baseUrl + '/' + valueName, {
-		})
-		.success(function(data, status, headers, config) {
-			callback(null, data);
-		})
-		.error(function(data, status, headers, config) {
-			$log.error('Error getting coop data ('+valueName+'), status=' + status + ': ' + data);
-            callback(new Error(data));
-		});
-	};
-
 	return {
 		commandDoor: commandDoor,
 		getClosingTime: getClosingTime,
@@ -87,5 +75,5 @@ angular.module(appName)
 		getTemp: getTemp,
 		getUptime: getUptime,
 		reset: reset
-	}
+	};
 }]);

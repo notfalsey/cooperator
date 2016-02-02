@@ -6,5 +6,5 @@ angular.module(appName)
 	return {
 		restrict: 'E',
         templateUrl: '/src/views/coop-controller.html'
-	}
+	};
 });

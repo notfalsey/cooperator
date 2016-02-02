@@ -7,6 +7,7 @@ module.exports = function(grunt) {
             files: ['Gruntfile.js', 'server/**/*.js', 'client/**/*.js', '!client/deps/**/*'],
             options: {
                 globals: {
+                    angular: false,
                     jQuery: true,
                     // for mocha tests
                     describe: false,

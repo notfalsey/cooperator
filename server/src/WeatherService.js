@@ -45,7 +45,7 @@ WeatherService.prototype = {
 	getSunrise: function(callback) {
 		var ret = null;
 		if(this.astronomyData) {
-			ret = this.astronomyData.sun_phase.sunrise;;	
+			ret = this.astronomyData.sun_phase.sunrise;	
 		}
 		return ret;
 	}

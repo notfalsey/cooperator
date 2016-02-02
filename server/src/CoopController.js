@@ -1,4 +1,5 @@
-var i2c = require('i2c'),
+var async = require('async'),
+	i2c = require('i2c'),
 	WeatherService = require('./WeatherService.js'),
 	log = require('./logger.js')();
 
@@ -10,9 +11,12 @@ function CoopController(config, weatherService) {
 	this.sunsetDeltaMinutes = config.sunsetDeltaMinutes;
 	this.sunriseDeltaMinutes = config.sunriseDeltaMinutes;
 	this.weatherService = weatherService;
+	this.commandQueue = [];
 	setTimeout(this.checkCoop.bind(this), 1000);
 
 	setInterval(this.checkCoop.bind(this), config.coopPollingInterval * 1000);
+
+	this.serviceCommands();
 }
 
 CoopController.prototype = {
@@ -50,32 +54,65 @@ CoopController.prototype = {
 			callback(new Error(msg));
 		}
 	},
+
+	serviceCommands: function() {
+		log.trace('Entering serviceCommands');
+		var self = this;
+		var nextCommands = self.commandQueue;
+		self.commandQueue = [];
+		log.trace({numCommands: nextCommands.length}, 'Going to service the next Commands');
+		async.eachSeries(nextCommands, function(command, callback) {
+			log.trace({command: command}, 'Servicing next command');
+			self.sendCommand(command.command, command.args, function(err, data) {
+				if(err) {
+					log.error({err: err, command: command}, 'Error sending command');
+				} else {
+					log.info({command: command}, 'Command succeeded');
+				}
+				command.callback(err, data);
+
+				// keep processing commands even if there was an error
+				// with a delay in between to keep the i2c bus sane
+				setTimeout(callback, 100);
+			});
+		}, function(err, results) {
+			if(err) {
+				log.error({err: err}, 'Error service commands');
+			}
+			setTimeout(self.serviceCommands.bind(self), 1000);
+		});
+	},
+
+	requestCommand: function(command, args, callback) {
+		this.commandQueue.push({command: command, args: args, callback: callback});
+	},
+
 	echo: function(args, callback) {
-		this.sendCommand(0, args, callback);
+		this.requestCommand(0, args, callback);
 	},
 	reset: function(callback) {
-		this.sendCommand(1, [], callback);
+		this.requestCommand(1, [], callback);
 	},
 	readTemp: function(callback) {
-		this.sendCommand(2, [], callback);
+		this.requestCommand(2, [], callback);
 	},
 	readLight: function(callback) {
-		this.sendCommand(3, [], callback);
+		this.requestCommand(3, [], callback);
 	},
 	readDoor: function(callback) {
-		this.sendCommand(4, [], callback);
+		this.requestCommand(4, [], callback);
 	},
 	closeDoor: function(callback) {
-		this.sendCommand(5, [], callback);
+		this.requestCommand(5, [], callback);
 	},
 	openDoor: function(callback) {
-		this.sendCommand(6, [], callback);
+		this.requestCommand(6, [], callback);
 	},
 	autoDoor: function(callback) {
-		this.sendCommand(7, [], callback);
+		this.requestCommand(7, [], callback);
 	},
 	readUptime: function(callback) {
-		this.sendCommand(8, [], callback);
+		this.requestCommand(8, [], callback);
 	},
 	checkCoop: function() {
 		var self = this;
@@ -100,7 +137,7 @@ CoopController.prototype = {
 					}
 				} else if(state === 2) {
 					// door is closed
-					if(currentMinutes > self.getOpeningTime() || currentMinutes < self.getClosingTime()) {
+					if(currentMinutes > self.getOpeningTime() && currentMinutes < self.getClosingTime()) {
 						// we need to open the door
 						self.openDoor(function(err) {
 							if(err) {
