@@ -62,20 +62,20 @@ angular.module(appName)
 										deltaHours += Math.floor(openMinutes / 60);
 										deltaMins += openMinutes % 60;
 									}
-									$scope.nextOpMessage = 'Opening in ' + deltaHours + ' hours and ' + deltaMins + ' minutes';
+									$scope.nextOpMessage = 'Opening in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
 								} else {
 									$scope.doorHealth = $scope.doorStates.danger;
 								}
 							} else if(doorState === 'open') {
 								if(currentMinutes >= openMinutes && currentMinutes <= closeMinutes) {
 									$scope.doorHealth = $scope.doorStates.ok;
-									deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
-									deltaMins = (closeMinutes - currentMinutes) % 60;
-
-									$scope.nextOpMessage = 'Closing in ' + deltaHours + ' hours and ' + deltaMins + ' minutes';
 								} else {
 									$scope.doorHealth = $scope.doorStates.danger;
 								}
+								deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
+									deltaMins = (closeMinutes - currentMinutes) % 60;
+
+									$scope.nextOpMessage = 'Closing in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
 							} else {
 								$scope.doorHealth = $scope.doorStates.transitioning;
 							}
@@ -91,7 +91,7 @@ angular.module(appName)
 					var days = Math.floor(uptime / (24 * 3600 * 1000));
 					var hours = Math.floor((uptime / (3600 * 1000)) % 24);
 					var minutes = Math.floor((uptime / (60 * 1000)) % 60);
-					$scope.uptime = days + ' days, ' + hours + ' hours, ' + minutes + ' minutes';	
+					$scope.uptime = days + ' days, ' + hours + ' hrs, ' + minutes + ' mins';	
 				}
 			});
 
