@@ -7,63 +7,46 @@ function setup(app, url, controller) {
 	
 	app.put(url + '/reset', function(req, res) {
 		controller.reset(function(err) {
-				var msg;
-				if(err) {
-					msg = 'Error resetting coop';
-					log.error({err: err}, msg);
-					res.status(500).json(msg);
-				} else {
-					msg = 'Coop is resetting';
-					log.debug(msg);
-					res.status(200).json(msg);
-				}
-				res.end();
-			});
+			var msg;
+			if(err) {
+				msg = 'Error resetting coop';
+				log.error({err: err}, msg);
+				res.status(500).json(msg);
+			} else {
+				msg = 'Coop is resetting';
+				log.debug(msg);
+				res.status(200).json(msg);
+			}
+			res.end();
+		});
 	});
 
 	app.get(url + '/temp', function(req, res) {
-		controller.readTemp(function(err, temp) {
-			if(err) {
-				var msg = 'Error reading temperature';
-				log.error({err: err}, msg);
-				res.status(500).json(msg);
-			} else {
-				log.debug({temp: temp}, 'Read temperature');
-				res.status(200).json(temp);
-			}
-			res.end();
-		});
+		log.trace('Entering get ' + url + '/temp');
+		var temp = controller.readTemp();
+		log.debug({temp: temp}, 'Read temp');
+		res.status(200).json(temp);
+		res.end();
 	});
 
 	app.get(url + '/light', function(req, res) {
-		controller.readLight(function(err, light) {
-			if(err) {
-				var msg = 'Error reading light';
-				log.error({err: err}, msg);
-				res.status(500).json(msg);
-			} else {
-				log.debug({light: light}, 'Read light');
-				res.status(200).json(light);
-			}
-			res.end();
-		});
+		log.trace('Entering get ' + url + '/light');
+		var light = controller.readLight();
+		log.debug({light: light}, 'Read light');
+		res.status(200).json(light);
+		res.end();
 	});
 
 	app.get(url + '/uptime', function(req, res) {
-		controller.readUptime(function(err, uptime) {
-			if(err) {
-				var msg = 'Error reading uptime';
-				log.error({err: err}, msg);
-				res.status(500).json(msg);
-			} else {
-				log.debug({uptime: uptime}, 'Read uptime');
-				res.status(200).json(uptime);
-			}
-			res.end();
-		});
+		log.trace('Entering get ' + url + '/uptime');
+		var uptime = controller.readUptime();
+		log.debug({uptime: uptime}, 'Read uptime');
+		res.status(200).json(uptime);
+		res.end();
 	});
 
 	app.get(url + '/closetime', function(req, res) {
+		log.trace('Entering get ' + url + '/closetime');
 		var closingMinutes = controller.getClosingTime();
 		var hour = Math.floor(closingMinutes / 60);
 		var minute = closingMinutes % 60;
@@ -72,6 +55,7 @@ function setup(app, url, controller) {
 	});
 
 	app.get(url + '/opentime', function(req, res) {
+		log.trace('Entering get ' + url + '/opentime');
 		var openingMinutes = controller.getOpeningTime();
 		var hour = Math.floor(openingMinutes / 60);
 		var minute = openingMinutes % 60;
@@ -81,25 +65,20 @@ function setup(app, url, controller) {
 
 	app.route(url + '/door')
 	.get(function(req, res) {
-		controller.readDoor(function(err, door) {
-			if(err) {
-				var msg = 'Error reading door';
-				log.error({err: err}, msg);
-				res.status(500).json(msg);
-			} else {
-				log.debug({door: door}, 'Read door');
-				var doorString = 'transitioning';
-				if (door === 0) {
-					doorString = "open";
-				} else if(door === 2) {
-					doorString = "closed";
-				}
-				res.status(200).json(doorString);
-			}
-			res.end();
-		});
+		log.trace('Entering get ' + url + '/door');
+		var door = controller.readDoor();
+		var doorString = 'transitioning';
+		if (door === 0) {
+			doorString = 'open';
+		} else if(door === 2) {
+			doorString = 'closed';
+		}
+		log.debug({door: door, doorString: doorString}, 'Read door');
+		res.status(200).json(doorString);
+		res.end();
 	})
 	.put(function(req, res) {
+		log.trace({dir: req.body.dir}, 'Entering put ' + url + '/door');
 		var msg;
 		if(req.body.dir === 'open') {
 			controller.openDoor(function(err) {

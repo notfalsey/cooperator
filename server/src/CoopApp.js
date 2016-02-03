@@ -10,6 +10,7 @@ var bodyParser = require('body-parser'),
 	log = require('./logger.js')();
 
 function configure (app, config) {
+    log.trace('Configuring coop app');
 	app.use(express.static(props.getStaticFilesDir()));
     app.use(bodyParser.json()); // for parsing application/json
     var weatherService = new WeatherService(config);
@@ -19,6 +20,7 @@ function configure (app, config) {
 }
 
 function CoopApp() {
+    log.trace('Creating coop app');
     this.config = fs.readJsonSync(props.getConfigJson());
 	this.app = express();
 	configure(this.app, this.config);
@@ -27,11 +29,14 @@ function CoopApp() {
 CoopApp.prototype = {
 	
 	start: function(keyPath, certPath, callback) {
+        log.trace('Starting coop app');
+        log.trace('Reading SSL key pair');
 		var options = {
             key: fs.readFileSync(keyPath),
             cert: fs.readFileSync(certPath)
         };
         var self = this;
+        log.trace('Starting HTTP server...');
         var httpsServer = https.createServer(options, this.app).listen(
             self.config.httpsPort,
             function(err) {

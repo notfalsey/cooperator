@@ -1,0 +1,6 @@
+#!/bin/bash
+setuidgid root i2cdetect -y  1 >> /var/log/coopweb.log 2>&1
+echo Starting coop controller
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+cd /opt/coopweb 
+exec setuidgid root node /opt/coopweb/server/src/Server.js >> /var/log/coopweb.log 2>&1

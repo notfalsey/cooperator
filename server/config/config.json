@@ -3,10 +3,9 @@
 	"state": "NC",
 	"city": "Carrboro",
 	"wundergroundApiKey": "?",
-	"sunriseDeltaMinutes": 0,
-	"sunsetDeltaMinutes": 0,
+	"sunriseDeltaMinutes": -30,
+	"sunsetDeltaMinutes": 30,
 	"i2cAddress": 5,
-	"coopPollingInterval": 300,
 	"logging": {
         "level": "trace",
         "count": 10,
