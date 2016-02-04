@@ -22,6 +22,9 @@ angular.module(appName)
 		$scope.readErrors = '?';
 		$scope.writeErrors = '?';
 		$scope.autoResets = '?';
+		$scope.lastError = '?';
+		$scope.lastRead = '?';
+		$scope.lastWrite = '?';
 		$scope.unhealthy = false;
 
 
