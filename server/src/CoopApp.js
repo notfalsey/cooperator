@@ -36,11 +36,12 @@ CoopApp.prototype = {
             cert: fs.readFileSync(certPath)
         };
         var self = this;
-        log.trace('Starting HTTP server...');
+        log.info('Starting HTTP server...');
         var httpsServer = https.createServer(options, this.app).listen(
             self.config.httpsPort,
             function(err) {
                 var mesg = 'HTTPS server listening on *:' + self.config.httpsPort;
+                log.info(mesg);
                 console.warn(mesg);
                 log.info(mesg);
                 if (callback) {

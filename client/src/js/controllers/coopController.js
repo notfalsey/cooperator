@@ -3,9 +3,9 @@
 var appName = 'coopApp';
 angular.module(appName)
 .controller(appName + '.coopController', 
-	['$scope', '$interval',
+	['$scope', '$log', '$interval',
 	appName + '.coopService', 
-	function($scope, $interval, coopService) {
+	function($scope, $log, $interval, coopService) {
 		$scope.openTime = '?';
 		$scope.closeTime = '?';
 		$scope.doorStates = {
@@ -19,6 +19,11 @@ angular.module(appName)
 		$scope.uptime = '?';
 		$scope.light = '?';
 		$scope.nextOpMessage = '';
+		$scope.readErrors = '?';
+		$scope.writeErrors = '?';
+		$scope.autoResets = '?';
+		$scope.unhealthy = false;
+
 
 		var update = function() {
 			coopService.getClosingTime(function(err, closeTime) {
@@ -122,5 +127,46 @@ angular.module(appName)
 			});
 		};
 
+		var getHealth = function() {
+			coopService.getReadErrorCount(function(err, readErrors) {
+				if(!err) {
+					$scope.readErrors = readErrors;
+				} else {
+					$log.error('Error getting read error count');
+				}
+				coopService.getWriteErrorCount(function(err, writeErrors) {
+					if(!err) {
+						$scope.writeErrors = writeErrors;
+					} else {
+						$log.error('Error getting write error count');
+					}
+					coopService.getAutoResetCount(function(err, autoResets) {
+						if(!err) {
+							$scope.autoResets = autoResets;
+							$scope.unhealthy = ($scope.autoResets + $scope.readErrors + $scope.writeErrors) > 0;
+						} else {
+							$log.error('Error getting auto reset count');
+						}
+						coopService.getLastRead(function(err, lastRead) {
+							if(!err) {
+								$scope.lastRead = new Date(lastRead).toString();
+							} else {
+								$log.error('Error getting last read');
+							}
+							coopService.getLastRead(function(err, lastWrite) {
+								if(!err) {
+									$scope.lastWrite = new Date(lastWrite).toString();
+								} else {
+									$log.error('Error getting last write');
+								}	
+							});
+						});
+					});
+				});
+			});
+		};
+
 		$interval(update, 5000);
+
+		getHealth();
 }]);

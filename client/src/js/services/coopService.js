@@ -66,12 +66,37 @@ angular.module(appName)
 		getCoopData('opentime', callback);
 	};
 
+	var getWriteErrorCount = function(callback) {
+		getCoopData('werrors', callback);
+	};
+
+	var getReadErrorCount = function(callback) {
+		getCoopData('rerrors', callback);
+	};
+
+	var getAutoResetCount = function(callback) {
+		getCoopData('autoresets', callback);
+	};
+
+	var getLastRead = function(callback) {
+		getCoopData('lastread', callback);
+	};
+
+	var getLastWrite = function(callback) {
+		getCoopData('lastwrite', callback);
+	};
+
 	return {
 		commandDoor: commandDoor,
+		getAutoResetCount: getAutoResetCount,
 		getClosingTime: getClosingTime,
 		getDoorState: getDoorState,
+		getLastRead: getLastRead,
+		getLastWrite: getLastWrite,
 		getLight: getLight,
 		getOpeningTime: getOpeningTime,
+		getReadErrorCount: getReadErrorCount,
+		getWriteErrorCount: getWriteErrorCount,
 		getTemp: getTemp,
 		getUptime: getUptime,
 		reset: reset

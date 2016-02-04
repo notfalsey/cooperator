@@ -12,8 +12,33 @@
   </head>
   <body>
     <div class="container-fluid">
-      <h1>Cooperator</h1>
-      <coop-controller></coop-controller>
+        <h1>Cooperator</h1>
+        <div ng-controller="coopApp.coopController">
+			<div class="row">
+				<div class="col-xs-8">
+					<div class="row">
+						<div class="col-xs-4" style="font-weight: bold;">Read errors:</div>
+						<div class="col-xs-8">{{readErrors}}</div>
+					</div>
+					<div class="row">
+						<div class="col-xs-4" style="font-weight: bold;">Write errors:</div>
+						<div class="col-xs-8">{{writeErrors}}</div>
+					</div>
+					<div class="row">
+						<div class="col-xs-4" style="font-weight: bold;">Auto resets:</div>
+						<div class="col-xs-8">{{autoResets}}</div>
+					</div>
+					<div class="row">
+						<div class="col-xs-4" style="font-weight: bold;">Last read:</div>
+						<div class="col-xs-8">{{lastRead}}</div>
+					</div>
+					<div class="row">
+						<div class="col-xs-4" style="font-weight: bold;">Last write:</div>
+						<div class="col-xs-8">{{lastWrite}}</div>
+					</div>
+				</div>
+			</div>
+		</div>
     </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->

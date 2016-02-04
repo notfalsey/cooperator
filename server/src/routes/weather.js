@@ -19,6 +19,12 @@ function setup(app, url, weatherService) {
 		res.status(200).json(sunset);
 		res.end();
 	});
+
+	app.get(url + '/errors', function(req, res) {
+		log.trace('Entering get ' + url + '/errors');
+		res.status(200).json(weatherService.getErrorCount());
+		res.end();
+	});
 }
 
 module.exports = setup;

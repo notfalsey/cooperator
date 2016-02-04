@@ -6,6 +6,7 @@ function WeatherService(config) {
 	log.debug({url: this.astronomyUrl}, 'Initializing weather service');
 	this.astronomyData = null;
 	this.refresh();
+	this.errorCount = 0;
 	// refresh every 12 hours
 	setInterval(this.refresh.bind(this), 12 * 60 * 60 * 1000);
 }
@@ -16,6 +17,7 @@ WeatherService.prototype = {
 		var self = this;
 		self.getData(self.astronomyUrl, function(err, data) {
 			if(err) {
+				self.errorCount++;
 				log.error('Error retrieving astrology data');
 			} else {
 				self.astronomyData = data;
@@ -49,6 +51,9 @@ WeatherService.prototype = {
 			ret = this.astronomyData.sun_phase.sunrise;	
 		}
 		return ret;
+	},
+	getErrorCount: function() {
+		return this.errorCount;
 	}
 };
 

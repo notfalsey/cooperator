@@ -6,6 +6,8 @@ var log = require('../logger.js')();
 function setup(app, url, controller) {
 	
 	app.put(url + '/reset', function(req, res) {
+		log.trace('Entering put ' + url + '/reset');
+		log.info('reset requested');
 		controller.reset(function(err) {
 			var msg;
 			if(err) {
@@ -14,7 +16,7 @@ function setup(app, url, controller) {
 				res.status(500).json(msg);
 			} else {
 				msg = 'Coop is resetting';
-				log.debug(msg);
+				log.info(msg);
 				res.status(200).json(msg);
 			}
 			res.end();
@@ -60,6 +62,36 @@ function setup(app, url, controller) {
 		var hour = Math.floor(openingMinutes / 60);
 		var minute = openingMinutes % 60;
 		res.status(200).json({hour: hour, minute: minute});
+		res.end();
+	});
+
+	app.get(url + '/rerrors', function(req, res) {
+		log.trace('Entering get ' + url + '/rerrors');
+		res.status(200).json(controller.getReadErrorCount());
+		res.end();
+	});
+
+	app.get(url + '/werrors', function(req, res) {
+		log.trace('Entering get ' + url + '/werrors');
+		res.status(200).json(controller.getWriteErrorCount());
+		res.end();
+	});
+
+	app.get(url + '/autoresets', function(req, res) {
+		log.trace('Entering get ' + url + '/autoresets');
+		res.status(200).json(controller.getAutoResetCount());
+		res.end();
+	});
+
+	app.get(url + '/lastread', function(req, res) {
+		log.trace('Entering get ' + url + '/lastread');
+		res.status(200).json(controller.getLastSuccessfulRead());
+		res.end();
+	});
+
+	app.get(url + '/lastwrite', function(req, res) {
+		log.trace('Entering get ' + url + '/lastwrite');
+		res.status(200).json(controller.getLastSuccessfulWrite());
 		res.end();
 	});
 

@@ -12,12 +12,17 @@ function CoopController(config, weatherService) {
 	this.sunriseDeltaMinutes = config.sunriseDeltaMinutes;
 	this.weatherService = weatherService;
 	this.commandQueue = [];
+	this.writeErrorCount = 0;
+	this.readErrorCount = 0;
+	this.autoResetCount = 0;
+	this.lastSuccessfulRead = -1;
+	this.lastSuccessfulWrite = -1;
 	
 	this.state = {
-		light: null,
-		door: null,
-		uptime: null,
-		temp: null
+		light: -1,
+		door: -1,
+		uptime: -1,
+		temp: -1
 	};
 
 	this.commands = {
@@ -46,19 +51,23 @@ CoopController.prototype = {
 			try {
 				wire.writeBytes(command, args, function(err) {
 					if(err) {
+						self.writeErrorCount++;
 						self.messageInProgress = false;
 						var msg = 'Error writing data to i2c bus';
 						log.error({command: command, args: args, err: err}, msg);
 						callback(new Error(msg));
 					} else {
+						self.lastSuccessfulWrite = new Date();
 						setTimeout(function() {
 							wire.read(4, function(err, readBytes) {
 								self.messageInProgress = false;
 								if(err) {
+									self.readErrorCount++;
 									var msg = 'Error reading data from i2c bus';
 									log.error({command: command, args: args, err: err}, msg);
 									callback(new Error(msg));
 								} else {
+									self.lastSuccessfulRead = new Date();
 									var reading = (readBytes[0]<<24) + (readBytes[1]<<16) + (readBytes[2]<<8) + readBytes[3];
 									log.debug({command: command, args: args, readBytes: readBytes, reading: reading}, 'Read data from i2c bus');
 									callback(null, reading);
@@ -95,6 +104,9 @@ CoopController.prototype = {
 							log.trace('Servicing queued commands');
 							async.eachSeries(self.commandQueue, function(command, callback) {
 								self.sendCommand(wire, command.command, command.args, function(err) {
+									if(command.command === self.commands.reset) {
+										self.state.uptime = -1;
+									}
 									// always keep going even if error
 									setTimeout(callback, delayBetween);
 								});			
@@ -107,10 +119,11 @@ CoopController.prototype = {
 							});
 						},
 						function(callback) {
-							log.trace('Updating door');
+							log.trace('Reading door state');
 							self.sendCommand(wire, self.commands.readDoor, [], function(err, door) {
 								if(err) {
 									log.error('Error reading door');
+									self.state.door = -1;
 								} else {
 									self.state.door = door;
 								}
@@ -119,11 +132,16 @@ CoopController.prototype = {
 							});		
 						},
 						function(callback) {
-							log.trace('Updating uptime');
+							log.trace('Reading uptime');
 							self.sendCommand(wire, self.commands.readUptime, [], function(err, uptime) {
 								if(err) {
 									log.error('Error reading uptime');
+									self.state.uptime = -1;
 								} else {
+									if(uptime < self.state.uptime && self.state.uptime < (Math.pow(2,32)-10000)) {
+										self.autoResetCount++;
+										log.error({uptime: uptime, lastUptime: self.state.uptime}, 'Coop controller reset');
+									}
 									self.state.uptime = uptime;
 								}
 								// always keep going even if error
@@ -131,10 +149,11 @@ CoopController.prototype = {
 							});		
 						},
 						function(callback) {
-							log.trace('Updating light');
+							log.trace('Reading light');
 							self.sendCommand(wire, self.commands.readLight, [], function(err, light) {
 								if(err) {
 									log.error('Error reading light');
+									self.state.light = -1;
 								} else {
 									self.state.light = light;
 								}
@@ -283,6 +302,21 @@ CoopController.prototype = {
 			ret = sunriseMinutes + this.sunriseDeltaMinutes;
 		}
 		return ret;
+	},
+	getReadErrorCount: function() {
+		return this.readErrorCount;
+	},
+	getWriteErrorCount: function() {
+		return this.writeErrorCount;
+	},
+	getAutoResetCount: function() {
+		return this.autoResetCount;
+	},
+	getLastSuccessfulRead: function() {
+		return this.lastSuccessfulRead;
+	},
+	getLastSuccessfulWrite: function() {
+		return this.lastSuccessfulWrite;
 	}
 };
 
