@@ -159,6 +159,17 @@ angular.module(appName)
 								} else {
 									$log.error('Error getting last write');
 								}	
+								coopService.getLastError(function(err, lastError) {
+									if(!err) {
+										if(lastError === -1) {
+											$scope.lastError = 'No errors yet';
+										} else {
+											$scope.lastError = new Date(lastError).toString();	
+										}
+									} else {
+										$log.error('Error getting last error');
+									}	
+								});
 							});
 						});
 					});

@@ -17,6 +17,7 @@ function CoopController(config, weatherService) {
 	this.autoResetCount = 0;
 	this.lastSuccessfulRead = -1;
 	this.lastSuccessfulWrite = -1;
+	this.lastError = -1;
 	
 	this.state = {
 		light: -1,
@@ -51,6 +52,7 @@ CoopController.prototype = {
 			try {
 				wire.writeBytes(command, args, function(err) {
 					if(err) {
+						self.lastError = new Date();
 						self.writeErrorCount++;
 						self.messageInProgress = false;
 						var msg = 'Error writing data to i2c bus';
@@ -62,6 +64,7 @@ CoopController.prototype = {
 							wire.read(4, function(err, readBytes) {
 								self.messageInProgress = false;
 								if(err) {
+									self.lastError = new Date();
 									self.readErrorCount++;
 									var msg = 'Error reading data from i2c bus';
 									log.error({command: command, args: args, err: err}, msg);
@@ -317,6 +320,9 @@ CoopController.prototype = {
 	},
 	getLastSuccessfulWrite: function() {
 		return this.lastSuccessfulWrite;
+	},
+	getLastError: function() {
+		return this.lastError;
 	}
 };
 

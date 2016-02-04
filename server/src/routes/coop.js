@@ -83,6 +83,12 @@ function setup(app, url, controller) {
 		res.end();
 	});
 
+	app.get(url + '/lasterror', function(req, res) {
+		log.trace('Entering get ' + url + '/lasterror');
+		res.status(200).json(controller.getLastError());
+		res.end();
+	});
+
 	app.get(url + '/lastread', function(req, res) {
 		log.trace('Entering get ' + url + '/lastread');
 		res.status(200).json(controller.getLastSuccessfulRead());

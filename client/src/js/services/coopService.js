@@ -78,6 +78,10 @@ angular.module(appName)
 		getCoopData('autoresets', callback);
 	};
 
+	var getLastError = function(callback) {
+		getCoopData('lasterror', callback);
+	};
+
 	var getLastRead = function(callback) {
 		getCoopData('lastread', callback);
 	};
@@ -91,6 +95,7 @@ angular.module(appName)
 		getAutoResetCount: getAutoResetCount,
 		getClosingTime: getClosingTime,
 		getDoorState: getDoorState,
+		getLastError: getLastError,
 		getLastRead: getLastRead,
 		getLastWrite: getLastWrite,
 		getLight: getLight,
