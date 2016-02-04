@@ -18,6 +18,7 @@ function CoopController(config, weatherService) {
 	this.lastSuccessfulRead = -1;
 	this.lastSuccessfulWrite = -1;
 	this.lastError = -1;
+	this.longestUptime = 0;
 	
 	this.state = {
 		light: -1,
@@ -141,6 +142,9 @@ CoopController.prototype = {
 									log.error('Error reading uptime');
 									self.state.uptime = -1;
 								} else {
+									if(uptime > self.longestUptime) {
+										self.longestUptime = uptime;
+									}
 									if(uptime < self.state.uptime && self.state.uptime < (Math.pow(2,32)-10000)) {
 										self.autoResetCount++;
 										log.error({uptime: uptime, lastUptime: self.state.uptime}, 'Coop controller reset');
@@ -323,6 +327,9 @@ CoopController.prototype = {
 	},
 	getLastError: function() {
 		return this.lastError;
+	},
+	getLongestUptime: function() {
+		return this.longestUptime;
 	}
 };
 

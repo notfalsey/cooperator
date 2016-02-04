@@ -101,6 +101,12 @@ function setup(app, url, controller) {
 		res.end();
 	});
 
+	app.get(url + '/longestuptime', function(req, res) {
+		log.trace('Entering get ' + url + '/longestuptime');
+		res.status(200).json(controller.getLongestUptime());
+		res.end();
+	});
+
 	app.route(url + '/door')
 	.get(function(req, res) {
 		log.trace('Entering get ' + url + '/door');

@@ -90,6 +90,10 @@ angular.module(appName)
 		getCoopData('lastwrite', callback);
 	};
 
+	var getLongestUptime = function(callback) {
+		getCoopData('longestuptime', callback);
+	};
+
 	return {
 		commandDoor: commandDoor,
 		getAutoResetCount: getAutoResetCount,
@@ -98,6 +102,7 @@ angular.module(appName)
 		getLastError: getLastError,
 		getLastRead: getLastRead,
 		getLastWrite: getLastWrite,
+		getLongestUptime: getLongestUptime,
 		getLight: getLight,
 		getOpeningTime: getOpeningTime,
 		getReadErrorCount: getReadErrorCount,

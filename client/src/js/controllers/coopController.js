@@ -169,6 +169,16 @@ angular.module(appName)
 										} else {
 											$scope.lastError = new Date(lastError).toString();	
 										}
+										coopService.getLongestUptime(function(err, longestUptime) {
+											if(!err) {
+												var days = Math.floor(longestUptime / (24 * 3600 * 1000));
+												var hours = Math.floor((longestUptime / (3600 * 1000)) % 24);
+												var minutes = Math.floor((longestUptime / (60 * 1000)) % 60);
+												$scope.longestUptime = days + ' days, ' + hours + ' hrs, ' + minutes + ' mins';	
+											} else {
+												$log.error('Error getting longest uptime');
+											}	
+										});
 									} else {
 										$log.error('Error getting last error');
 									}	
