@@ -12,9 +12,13 @@
 			<div class="row">
 				<div class="col-xs-4" style="font-weight: bold;">Door:</div>
 				<div class="col-xs-8"><span ng-show="doorHealth===doorStates.ok" class="label label-success">{{doorState}}</span>
-							 <span ng-show="doorHealth===doorStates.transitioning" class="label label-warning">{{doorState}}</span>
+							 <span ng-show="doorHealth===doorStates.transitioning || doorHealth===doorStates.unknown" class="label label-warning">{{doorState}}</span>
 							 <span ng-show="doorHealth===doorStates.danger" class="label label-danger">{{doorState}}</span>
 				</div>
+			</div>
+			<div class="row">
+				<div class="col-xs-4" style="font-weight: bold;">Mode:</div>
+				<div class="col-xs-8">{{mode}}</div>
 			</div>
 			<div class="row">
 				<div class="col-xs-4" style="font-weight: bold;">Light:</div>
@@ -39,9 +43,15 @@
 	<br/>
 
 	<div class="row">
+		<div class="col-xs-12" ng-show="mode === 'manual'">
+			<span class="label label-danger">Coop is in manual mode</span>
+		</div>
 		<div class="col-xs-12">
-			<button type="button" class="btn btn-primary navbar-btn" ng-disabled="doorState!=='open'" ng-click="closeDoor()">Close</button>
-			<button type="button" class="btn btn-primary navbar-btn" ng-disabled="doorState!=='closed'" ng-click="openDoor()">Open</button>
+			<br/>
+		</div>
+		<div class="col-xs-12">
+			<button type="button" class="btn btn-primary" ng-disabled="doorState!=='open' || mode === 'manual'" ng-click="closeDoor()"><span ng-show="closeActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Close</button>
+			<button type="button" class="btn btn-primary" ng-disabled="doorState!=='closed' || mode === 'manual'" ng-click="openDoor()"><span ng-show="openActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Open</button>
 		</div>
 	</div>
 
@@ -49,17 +59,9 @@
 
 	<div class="row">
 		<div class="col-xs-12">
-			<button type="button" class="btn btn-default navbar-btn" ng-click="reset()">Reset</button>
-			<a href="/src/views/health.html"><button type="button" class="btn btn-default navbar-btn">Health</button></a>
+			<button type="button" class="btn btn-default" ng-click="reset()"><span ng-show="resetActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Reset</button>
+			<a href="/src/views/health.html"><button type="button" class="btn btn-default">Health</button></a>
 			<div class="col-xs-12">
 		</div>
 	</div>
-	</div>
-
-	<!--<div class="row">
-		<div class="col-xs-12">
-			<img width="300" src="http://192.168.1.106/snapshot.cgi?user=pi&pwd=passw0rd&t=" onload='setTimeout(function() {src = src.substring(0, (src.lastIndexOf("t=")+2))+(new Date()).getTime()}, 1000)' onerror='setTimeout(function() {src = src.substring(0, (src.lastIndexOf("t=")+2))+(new Date()).getTime()}, 5000)' alt='' />
-		</div>
-	</div>-->
-
 </div>

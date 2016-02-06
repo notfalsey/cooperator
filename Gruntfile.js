@@ -1,6 +1,6 @@
 module.exports = function(grunt) {
-    grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-contrib-jshint');
+    grunt.loadNpmTasks('grunt-exec');
 
     grunt.initConfig({
         jshint: {
@@ -31,16 +31,13 @@ module.exports = function(grunt) {
                 multistr: true
             }
         },
-        bower: {
-            install: {
-                options: {
-                    targetDir: './client/deps',
-                    cleanTargetDir: true
-                }
-            }
+        exec: {
+            bower: "bower install"
         }
     });
 
-    grunt.registerTask('default', ['bower:install', 'jshint']);
+    
+
+    grunt.registerTask('default', ['exec:bower', 'jshint']);
     
 };

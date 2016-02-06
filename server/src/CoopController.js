@@ -19,12 +19,18 @@ function CoopController(config, weatherService) {
 	this.lastSuccessfulWrite = -1;
 	this.lastError = -1;
 	this.longestUptime = 0;
+	this.timeToTransition = 15000;
+	this.activeDoorCommand = -1;
+	this.doorCommandExpiration = null;
 	
 	this.state = {
 		light: -1,
 		door: -1,
 		uptime: -1,
-		temp: -1
+		temp: -1,
+		mode: -1,
+		closing: false,
+		opening: false
 	};
 
 	this.commands = {
@@ -33,10 +39,11 @@ function CoopController(config, weatherService) {
 		readTemp: 2,
 		readLight: 3,
 		readDoor: 4,
-		shutDoor: 5,
+		closeDoor: 5,
 		openDoor: 6,
 		autoDoor: 7,
-		readUptime: 8
+		readUptime: 8,
+		readMode: 9
 	};
 
 	this.syncLoop();
@@ -77,7 +84,7 @@ CoopController.prototype = {
 									callback(null, reading);
 								}
 							});
-						}, 50);
+						}, 100);
 					}
 				});	
 			} catch(err) {
@@ -105,8 +112,11 @@ CoopController.prototype = {
 				//var wire = new i2c(self.i2cAddress, {device: '/dev/i2c-1', debug: false}); // point to your i2c address, debug provides REPL interface
 				async.series([
 						function(callback) {
-							log.trace('Servicing queued commands');
-							async.eachSeries(self.commandQueue, function(command, callback) {
+							log.trace({commandLength: self.commandQueue.length}, 'Servicing queued commands');
+							var commandsToService = self.commandQueue;
+							self.commandQueue = [];
+							async.eachSeries(commandsToService, function(command, callback) {
+								log.trace({command: command}, 'Sending command');
 								self.sendCommand(wire, command.command, command.args, function(err) {
 									if(command.command === self.commands.reset) {
 										self.state.uptime = -1;
@@ -122,6 +132,26 @@ CoopController.prototype = {
 								callback(null);
 							});
 						},
+						// read uptime before other state so we know if the coop was recently reset before reading others
+						function(callback) {
+							log.trace('Reading uptime');
+							self.sendCommand(wire, self.commands.readUptime, [], function(err, uptime) {
+								if(err) {
+									log.error('Error reading uptime');
+								} else {
+									if(uptime > self.longestUptime) {
+										self.longestUptime = uptime;
+									}
+									if(uptime < self.state.uptime && self.state.uptime < (Math.pow(2,32)-10000)) {
+										self.autoResetCount++;
+										log.error({uptime: uptime, lastUptime: self.state.uptime}, 'Coop controller reset');
+									}
+									self.state.uptime = uptime;
+								}
+								// always keep going even if error
+								setTimeout(callback, delayBetween);
+							});		
+						},
 						function(callback) {
 							log.trace('Reading door state');
 							self.sendCommand(wire, self.commands.readDoor, [], function(err, door) {
@@ -136,20 +166,13 @@ CoopController.prototype = {
 							});		
 						},
 						function(callback) {
-							log.trace('Reading uptime');
-							self.sendCommand(wire, self.commands.readUptime, [], function(err, uptime) {
+							log.trace('Reading override mode');
+							self.sendCommand(wire, self.commands.readMode, [], function(err, mode) {
 								if(err) {
-									log.error('Error reading uptime');
-									self.state.uptime = -1;
+									log.error('Error reading door');
+									self.state.mode = -1;
 								} else {
-									if(uptime > self.longestUptime) {
-										self.longestUptime = uptime;
-									}
-									if(uptime < self.state.uptime && self.state.uptime < (Math.pow(2,32)-10000)) {
-										self.autoResetCount++;
-										log.error({uptime: uptime, lastUptime: self.state.uptime}, 'Coop controller reset');
-									}
-									self.state.uptime = uptime;
+									self.state.mode = mode;
 								}
 								// always keep going even if error
 								setTimeout(callback, delayBetween);
@@ -224,6 +247,9 @@ CoopController.prototype = {
 	readUptime: function(callback) {
 		return this.state.uptime;
 	},
+	readMode: function(callback) {
+		return this.state.mode;
+	},
 	echo: function(args, callback) {
 		this.requestCommand(this.commands.echo, args, callback);
 	},
@@ -231,64 +257,114 @@ CoopController.prototype = {
 		this.requestCommand(this.commands.reset, [], callback);
 	},
 	closeDoor: function(callback) {
+		log.trace('Entering closeDoor');
+		this.activeDoorCommand = this.commands.closeDoor;
+		this.doorCommandExpiration = this.getDoorCommandExpiration();
+		log.info({expiration: this.doorCommandExpiration}, 'Requesting close door');
 		this.requestCommand(this.commands.closeDoor, [], callback);
 	},
 	openDoor: function(callback) {
+		log.trace('Entering openDoor');
+		this.activeDoorCommand = this.commands.openDoor;
+		this.doorCommandExpiration = this.getDoorCommandExpiration();
+		log.info({expiration: this.doorCommandExpiration}, 'Requesting open door');
 		this.requestCommand(this.commands.openDoor, [], callback);
 	},
 	autoDoor: function(callback) {
+		log.trace('Entering autoDoor');
 		this.requestCommand(this.commands.autoDoor, [], callback);
+	},
+	isClosing: function(callback) {
+		return this.state.closing;
+	},
+	isOpening: function(callback) {
+		return this.state.opening;
+	},
+	getCurrentMinutes: function(currentTime) {
+		return currentTime.getHours() * 60 + currentTime.getMinutes();
+	},
+	getDoorCommandExpiration: function() {
+		log.trace('Entering getDoorCommandExpiration');
+		var currentTime = new Date();
+		var sunrise = this.weatherService.getSunrise();
+		var sunset = this.weatherService.getSunset();
+		var currentMins = this.getCurrentMinutes(currentTime);
+		var ret;
+		if(currentMins <= this.getOpeningTime()) {
+			// today sunrise
+			var ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
+			log.trace({ret: ret}, 'Returning from getDoorCommandExpiration with todays sunrise');
+			return ret;
+		} else if(currentMins > this.getOpeningTime() && currentMins < this.getClosingTime()) {
+			// today sunset
+			var ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunset.hour, sunset.minute);
+			log.trace({ret: ret}, 'Returning from getDoorCommandExpiration with todays sunset');
+			return ret;
+		}
+		// else tomorrow sunrise
+		var todaySunrise = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
+		var ret = new Date(todaySunrise.getTime() + 24*60*60*1000);
+		log.trace({ret: ret}, 'Returning from getDoorCommandExpiration with tomorrows sunrise');
+		return ret;
 	},
 	checkDoor: function(wire, state, callback) {
 		log.trace('Entering checkCoop');
 		var self = this;
 		var currentTime = new Date();
-		var currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+		// check if last manual door command needs to expire
+		if(self.activeDoorCommand !== -1 && currentTime.getTime() >= self.doorCommandExpiration.getTime()) {
+			log.info({command: self.activeDoorCommand}, 'Manual door command expired, resetting it');
+			self.activeDoorCommand = -1;
+			self.doorCommandExpiration = null;
+		}
+		var currentMinutes = self.getCurrentMinutes(currentTime);
 
 		var openingTime = self.getOpeningTime();
 		var closingTime = self.getClosingTime();
 
-		if(closingTime !== null && openingTime !== null)
-		{
-			if(state === 0) {
-				log.trace('Door is open');
-				// door is open
-				if(currentMinutes < openingTime || currentMinutes > closingTime) {
-					log.info('Sending command to close door');
-					// we need to close the door
-					self.sendCommand(wire, self.commands.closeDoor, [], function(err) {
-						if(err) {
-							log.error({err: err}, 'Error closing coop door');
-						} else {
-							log.info('Closed coop door');
-						}
-						callback(err);
-					});			
-					return;			
+		if(self.activeDoorCommand !== -1) {
+			// there is an active manual door command, so honor it
+			log.trace({ command: self.activeDoorCommand}, 'Sending manual command to door');
+			self.sendCommand(wire, self.activeDoorCommand, [], function(err) {
+				if(err) {
+					log.error({err: err}, 'Error sending manual door commands');
+				} else {
+					log.trace('Send manual door command');
 				}
-			} else if(state === 2) {
-				log.trace('Door is closed');
-				// door is closed
-				if(currentMinutes > openingTime && currentMinutes < closingTime) {
-					log.info('Sending command to open door');
-					// we need to open the door
-					self.sendCommand(wire, self.commands.openDoor, [], function(err) {
-						if(err) {
-							log.error({err: err}, 'Error opening coop door');
-						} else {
-							log.info('Opened coop door');
-						}
-						callback(err);
-					});		
-					return;				
-				}
-			} else {
-				log.info('Read door in transition, doing nothing');
+				callback(err);
+			});
+
+		} else if(closingTime !== null && openingTime !== null) {
+			// if we have an auto open time and close time and there is no active manual door command
+			if(currentMinutes < openingTime || currentMinutes > closingTime) {
+				log.trace('Sending command to close door');
+				// we need to close the door
+				self.sendCommand(wire, self.commands.closeDoor, [], function(err) {
+					if(err) {
+						log.error({err: err}, 'Error closing coop door');
+					} else {
+						log.info('Closed coop door');
+					}
+					callback(err);
+				});
+			} else {	
+				log.trace('Sending command to open door');
+				// we need to open the door
+				self.sendCommand(wire, self.commands.openDoor, [], function(err) {
+					if(err) {
+						log.error({err: err}, 'Error opening coop door');
+					} else {
+						log.info('Opened coop door');
+					}
+					callback(err);
+				});
 			}	
 		} else {
-			log.warn('Did not have a valid closing or opening time');
+			var msg = 'Did not have a valid closing or opening time';
+			log.warn(msg);
+			callback(new Error(msg));
 		}
-		callback(null);
+		
 	},
 	getClosingTime: function() {
 		log.trace('Entering getClosingTime');

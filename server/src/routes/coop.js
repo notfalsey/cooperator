@@ -107,6 +107,19 @@ function setup(app, url, controller) {
 		res.end();
 	});
 
+	app.route(url + '/mode')
+	.get(function(req, res) {
+		log.trace('Entering get ' + url + '/mode');
+		var mode = controller.readMode();
+		var modeString = 'auto';
+		if (mode === 1) {
+			modeString = 'manual';
+		}
+		log.debug({mode: mode, modeString: modeString}, 'Read mode');
+		res.status(200).json(modeString);
+		res.end();
+	});
+
 	app.route(url + '/door')
 	.get(function(req, res) {
 		log.trace('Entering get ' + url + '/door');

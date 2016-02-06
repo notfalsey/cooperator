@@ -12,10 +12,12 @@ angular.module(appName)
 			danger: 'danger',
 			ok: 'ok',
 			transitioning: 'transitioning',
-			error: 'error'
+			error: 'error',
+			unknown: 'unknown'
 		};
 		$scope.doorState = 'unknown';
-		$scope.doorHealth = $scope.doorStates.transitioning;
+		$scope.mode = 'unknown';
+		$scope.doorHealth = $scope.doorStates.unknown;
 		$scope.uptime = '?';
 		$scope.light = '?';
 		$scope.nextOpMessage = '';
@@ -26,7 +28,9 @@ angular.module(appName)
 		$scope.lastRead = '?';
 		$scope.lastWrite = '?';
 		$scope.unhealthy = false;
-
+		$scope.resetActive = false;
+		$scope.closeActive = false;
+		$scope.openActive = false;
 
 		var update = function() {
 			coopService.getClosingTime(function(err, closeTime) {
@@ -65,10 +69,8 @@ angular.module(appName)
 										deltaMins = (openMinutes - currentMinutes) % 60;
 									} else {
 										// night time
-										deltaHours = Math.floor((24*60 - currentMinutes) / 60);
-										deltaMins = (24*60 - currentMinutes) % 60;
-										deltaHours += Math.floor(openMinutes / 60);
-										deltaMins += openMinutes % 60;
+										deltaHours = Math.floor((24*60 - currentMinutes + openMinutes) / 60);
+										deltaMins = (24*60 - currentMinutes + openMinutes) % 60;
 									}
 									$scope.nextOpMessage = 'Opening in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
 								} else {
@@ -81,9 +83,9 @@ angular.module(appName)
 									$scope.doorHealth = $scope.doorStates.danger;
 								}
 								deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
-									deltaMins = (closeMinutes - currentMinutes) % 60;
+								deltaMins = (closeMinutes - currentMinutes) % 60;
 
-									$scope.nextOpMessage = 'Closing in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
+								$scope.nextOpMessage = 'Closing in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
 							} else {
 								$scope.doorHealth = $scope.doorStates.transitioning;
 							}
@@ -110,6 +112,14 @@ angular.module(appName)
 					$scope.light = light;	
 				}
 			});
+
+			coopService.getMode(function(err, mode) {
+				if(err) {
+					$scope.mode = 'error';
+				} else {
+					$scope.mode = mode;	
+				}
+			});
 		};
 
 		$scope.autoDoor = function() {
@@ -117,14 +127,26 @@ angular.module(appName)
 		};
 
 		$scope.closeDoor = function() {
+			$scope.closeActive = true;
+			setTimeout(function() {
+				$scope.closeActive = false;
+			}, 20000);
 			coopService.commandDoor('close', function(err){});
 		};
 
 		$scope.openDoor = function() {
+			$scope.openActive = true;
+			setTimeout(function() {
+				$scope.openActive = false;
+			}, 20000);
 			coopService.commandDoor('open', function(err){});
 		};
 
 		$scope.reset = function() {
+			$scope.resetActive = true;
+			setTimeout(function() {
+				$scope.resetActive = false;
+			}, 20000);
 			coopService.reset(function(err){
 				update();
 			});
