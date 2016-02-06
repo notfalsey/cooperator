@@ -289,21 +289,21 @@ CoopController.prototype = {
 		var sunrise = this.weatherService.getSunrise();
 		var sunset = this.weatherService.getSunset();
 		var currentMins = this.getCurrentMinutes(currentTime);
-		var ret;
+		var ret = null;
 		if(currentMins <= this.getOpeningTime()) {
 			// today sunrise
-			var ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
+			ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
 			log.trace({ret: ret}, 'Returning from getDoorCommandExpiration with todays sunrise');
 			return ret;
 		} else if(currentMins > this.getOpeningTime() && currentMins < this.getClosingTime()) {
 			// today sunset
-			var ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunset.hour, sunset.minute);
+			ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunset.hour, sunset.minute);
 			log.trace({ret: ret}, 'Returning from getDoorCommandExpiration with todays sunset');
 			return ret;
 		}
 		// else tomorrow sunrise
 		var todaySunrise = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
-		var ret = new Date(todaySunrise.getTime() + 24*60*60*1000);
+		ret = new Date(todaySunrise.getTime() + 24*60*60*1000);
 		log.trace({ret: ret}, 'Returning from getDoorCommandExpiration with tomorrows sunrise');
 		return ret;
 	},
