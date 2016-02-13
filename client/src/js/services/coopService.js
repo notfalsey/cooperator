@@ -2,9 +2,9 @@
 
 var appName = 'coopApp';
 angular.module(appName)
-.factory(appName + '.coopService', ['$http', '$log', '$interval', function($http, $log, $interval) {
+.factory(appName + '.coopService', ['$http', '$log', '$interval', '$location', function($http, $log, $interval, $location) {
 
-	var baseUrl = 'https://192.168.1.111:9443/coop';
+	var baseUrl = '/coop';
 
 	var commandDoor = function(dir, callback) {
 		$http.put(baseUrl + '/door', {

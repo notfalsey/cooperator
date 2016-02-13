@@ -16,6 +16,7 @@ function configure (app, config) {
     var weatherService = new WeatherService(config);
     var coopController = new CoopController(config, weatherService);
     require('./routes/coop.js')(app, '/coop', coopController);
+    require('./routes/video.js')(app, '/video', config);
     require('./routes/weather.js')(app, '/weather', weatherService);
 }
 

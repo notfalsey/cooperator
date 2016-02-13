@@ -1,12 +1,12 @@
 var async = require('async'),
-	i2c = require('i2c'),
+	i2c = require('./i2cWrapper.js'),
 	WeatherService = require('./WeatherService.js'),
 	log = require('./logger.js')();
 
 function CoopController(config, weatherService) {
 	log.info('Initializing coop controller');
 	this.i2cAddress = 0x05;
-	log.debug({address: this.i2cAddress}, 'Joining i2C bus');
+	log.debug({address: this.i2cAddress}, 'Using i2C address');
 	this.messageInProgress = false;
 	this.sunsetDeltaMinutes = config.sunsetDeltaMinutes;
 	this.sunriseDeltaMinutes = config.sunriseDeltaMinutes;
@@ -69,6 +69,7 @@ CoopController.prototype = {
 					} else {
 						self.lastSuccessfulWrite = new Date();
 						setTimeout(function() {
+							log.trace('Reading i2C command response');
 							wire.read(4, function(err, readBytes) {
 								self.messageInProgress = false;
 								if(err) {
@@ -104,6 +105,7 @@ CoopController.prototype = {
 		log.trace('Entering updateState');
 		var self = this;
 		var delayBetween = 100;
+		log.debug({address: self.i2cAddress}, 'Joining i2C bus');
 		var wire = new i2c(self.i2cAddress, {device: '/dev/i2c-1', debug: false}); // point to your i2c address, debug provides REPL interface
 		async.whilst(
 			function() { return true; },

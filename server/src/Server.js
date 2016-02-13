@@ -7,6 +7,30 @@ var async = require('async'),
     fs = require('fs-extra'),
     log = require('./logger.js')();
 
+// add an uncaught exception handler that allows us to log the final bits and anything else before the ship sinks
+process.on('uncaughtException', function(err) {
+    //process.removeListener('uncaughtException', arguments.callee);
+
+    // log the exception
+    log.fatal(err);
+
+    function closeHandler(streamError, stream) {
+        throw err;
+    }
+
+    // flush and close the streams to we get the last bit of log that is oh so important
+    function closeStream(elem, index, array) {
+        // throw original once stream is closed
+        elem.stream.on('close', closeHandler);
+        if (elem.type == 'file') {
+            elem.stream.end();
+        }
+    }
+
+    log.streams.forEach(closeStream);
+    process.exit(1);
+});
+
 var config = null;
 var msg = 'Starting coop app...';
 log.info('===================================');
