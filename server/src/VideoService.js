@@ -19,7 +19,7 @@ VideoService.prototype = {
 		var self = this;
 		try {
 			var req = http.request(this.options, function(res){
-				callerRes.pipe(stream);
+				res.pipe(callerRes);
 			});	
 			req.on('error', function(err){
 				var msg = 'Error connecting to video service';
