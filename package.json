@@ -5,12 +5,18 @@
     "async": "^1.5.2",
     "body-parser": "^1.14.2",
     "bunyan": "^1.5.1",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.1",
     "express": "^4.13.4",
+    "express-session": "^1.13.0",
     "fs-extra": "^0.26.5",
-    "i2c": "0.2.1"
+    "i2c": "0.2.1",
+    "passport": "^0.3.2",
+    "passport-google-oauth20": "^1.0.0"
   },
   "scripts": {
-    "start": "node server/src/Server.js"
+    "start": "node server/src/Server.js",
+    "debug": "node-debug server/src/Server.js"
   },
   "devDependencies": {
     "bower": "^1.7.7",

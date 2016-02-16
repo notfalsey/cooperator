@@ -10,5 +10,12 @@
         "level": "trace",
         "count": 10,
         "size": 100000
-    }
+    },
+    "cameraIp": "192.168.1.110",
+    "cameraUser": "?",
+    "cameraPassword": "?",
+    "googleOauthClientId": "?",
+    "googleOauthClientSecret": "?",
+    "googleCallbackUrl": "?",
+    "allowedUsers": []
 }
