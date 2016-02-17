@@ -1,6 +1,6 @@
 var async = require('async'),
 	i2c = require('./i2cWrapper.js'),
-	WeatherService = require('./WeatherService.js'),
+	NotifyService = require('./NotifyService.js'),
 	log = require('./logger.js')();
 
 function CoopController(config, weatherService) {
@@ -11,6 +11,8 @@ function CoopController(config, weatherService) {
 	this.sunsetDeltaMinutes = config.sunsetDeltaMinutes;
 	this.sunriseDeltaMinutes = config.sunriseDeltaMinutes;
 	this.weatherService = weatherService;
+	this.enableMailNotify = config.enableMailNotify;
+	this.notifyService = new NotifyService(config);
 	this.commandQueue = [];
 	this.writeErrorCount = 0;
 	this.readErrorCount = 0;
@@ -22,6 +24,13 @@ function CoopController(config, weatherService) {
 	this.timeToTransition = 15000;
 	this.activeDoorCommand = -1;
 	this.doorCommandExpiration = null;
+	this.lastNonErrorDoorState = null;
+
+	this.doorStates = {
+		open: 0,
+		transitioning: 1,
+		closed: 2
+	};
 	
 	this.state = {
 		light: -1,
@@ -161,7 +170,15 @@ CoopController.prototype = {
 									log.error('Error reading door');
 									self.state.door = -1;
 								} else {
-									self.state.door = door;
+									// first lets compare current state against previous state and send a notification of state change if necessary
+									if(self.enableMailNotify === true && self.lastNonErrorDoorState === self.doorStates.transitioning) {
+										if(door === self.doorStates.open) {
+											self.notifyService.notify('Door opened');
+										} else if(door === self.doorStates.closed) {
+											self.notifyService.notify('Door closed');
+										}
+									}
+									self.lastNonErrorDoorState = self.state.door = door;
 								}
 								// always keep going even if error
 								setTimeout(callback, delayBetween);
@@ -171,7 +188,7 @@ CoopController.prototype = {
 							log.trace('Reading override mode');
 							self.sendCommand(wire, self.commands.readMode, [], function(err, mode) {
 								if(err) {
-									log.error('Error reading door');
+									log.error('Error reading override mode');
 									self.state.mode = -1;
 								} else {
 									self.state.mode = mode;

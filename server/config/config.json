@@ -17,5 +17,10 @@
     "googleOauthClientId": "?",
     "googleOauthClientSecret": "?",
     "googleCallbackUrl": "?",
-    "allowedUsers": []
+    "allowedUsers": [],
+    "enableMailNotify": true,
+    "mailRecipients": [],
+	"mailFrom": "?",
+	"mailDomain": "?",
+	"mailApiKey": "?"
 }
