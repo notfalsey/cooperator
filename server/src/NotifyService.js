@@ -9,19 +9,19 @@ function NotifyService(config) {
 }
 
 NotifyService.prototype = {
-	notify: function(message, callback) {
+	notify: function(subject, message, callback) {
 		var data  = {
 			from: this.from,
 			to: this.recipients,
-			subject: message,
+			subject: subject,
 			text: message
 		};
-		log.trace({message: message}, 'Sending email notification');
+		log.trace({subject: subject, message: message}, 'Sending email notification');
 		this.mailgun.messages().send(data, function(err, body) {
 			if(err) {
 				log.error({err: err, body: body}, 'Error sending email notification');
 			} else {
-				log.trace({body: body, message: message}, 'Sent email notification');
+				log.trace({body: body, subject: subject}, 'Sent email notification');
 			}
 			if(callback) {
 				callback(err);	

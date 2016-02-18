@@ -173,9 +173,12 @@ CoopController.prototype = {
 									// first lets compare current state against previous state and send a notification of state change if necessary
 									if(self.enableMailNotify === true && self.lastNonErrorDoorState === self.doorStates.transitioning) {
 										if(door === self.doorStates.open) {
-											self.notifyService.notify('Door opened');
+											self.notifyService.notify('Door opened', 'Its a brand new day!');
 										} else if(door === self.doorStates.closed) {
-											self.notifyService.notify('Door closed');
+											var opening = self.getOpeningTime();
+											var openingHour = Math.floor(opening / 60);
+											var openingMinute = opening % 60;
+											self.notifyService.notify('Door closed', 'Safe and sound.');
 										}
 									}
 									self.lastNonErrorDoorState = self.state.door = door;
