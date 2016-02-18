@@ -175,9 +175,6 @@ CoopController.prototype = {
 										if(door === self.doorStates.open) {
 											self.notifyService.notify('Door opened', 'Its a brand new day!');
 										} else if(door === self.doorStates.closed) {
-											var opening = self.getOpeningTime();
-											var openingHour = Math.floor(opening / 60);
-											var openingMinute = opening % 60;
 											self.notifyService.notify('Door closed', 'Safe and sound.');
 										}
 									}
