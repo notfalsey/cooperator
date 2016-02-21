@@ -4,8 +4,8 @@ var appName = 'coopApp';
 angular.module(appName)
 .controller(appName + '.coopController', 
 	['$scope', '$log', '$interval',
-	appName + '.coopService', 
-	function($scope, $log, $interval, coopService) {
+	appName + '.coopService', appName + '.videoService', 
+	function($scope, $log, $interval, coopService, videoService) {
 		$scope.openTime = '?';
 		$scope.closeTime = '?';
 		$scope.doorStates = {
@@ -150,6 +150,18 @@ angular.module(appName)
 			coopService.reset(function(err){
 				update();
 			});
+		};
+
+		$scope.panVideo = function(dir) {
+			videoService.pan(dir);
+		};
+
+		$scope.goToVideoPreset = function(preset) {
+			videoService.goToPreset(preset);
+		};
+
+		$scope.setIR = function(ir) {
+			videoService.setIR(ir);
 		};
 
 		var getHealth = function() {

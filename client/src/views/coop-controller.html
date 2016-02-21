@@ -73,4 +73,23 @@
   			<img width="300" src="/video?t=z" onload='setTimeout(function() {src = src.substring(0, (src.lastIndexOf("t=")+2))+(new Date()).getTime()}, 1000)' onerror='setTimeout(function() {src = src.substring(0, (src.lastIndexOf("t=")+2))+(new Date()).getTime()}, 5000)' alt='' />
   		</div>
  	</div>
+ 	<br/>
+ 	<div class="row">
+ 		<div class="col-xs-offset-1 col-xs-1">
+ 			<button type="button" class="btn btn-primary" ng-click="panVideo('up')"><span class="glyphicon glyphicon-chevron-up"></span></button>
+  		</div>
+  	</div>
+  	<div class="row">
+ 		<div class="col-xs-offset-0 col-xs-1">
+ 			<button type="button" class="btn btn-primary" ng-click="panVideo('left')"><span class="glyphicon glyphicon-chevron-left"></span></button>
+  		</div>
+  		<div class="col-xs-offset-1 col-xs-1">
+ 			<button type="button" class="btn btn-primary" ng-click="panVideo('right')"><span class="glyphicon glyphicon-chevron-right"></span></button>
+  		</div>
+  	</div>
+  	<div class="row">
+ 		<div class="col-xs-offset-1 col-xs-1">
+ 			<button type="button" class="btn btn-primary" ng-click="panVideo('down')"><span class="glyphicon glyphicon-chevron-down"></span></button>
+  		</div>
+  	</div>
 </div>
