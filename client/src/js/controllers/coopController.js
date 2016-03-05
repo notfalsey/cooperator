@@ -19,7 +19,6 @@ angular.module(appName)
 		$scope.mode = 'unknown';
 		$scope.doorHealth = $scope.doorStates.unknown;
 		$scope.uptime = '?';
-		$scope.light = '?';
 		$scope.nextOpMessage = '';
 		$scope.readErrors = '?';
 		$scope.writeErrors = '?';
@@ -32,66 +31,73 @@ angular.module(appName)
 		$scope.closeActive = false;
 		$scope.openActive = false;
 
+		var computeNextOpMessage = function() {
+			if($scope.openTime !== '?' && $scope.closeTime !== '?' && $scope.doorState !== 'unknown') {
+				var currentTime = new Date();
+				var currentMinutes = currentTime.getHours()*60 + currentTime.getMinutes();
+				var closeMinutes = $scope.closeTime.hour * 60 + $scope.closeTime.minute;
+				var openMinutes = $scope.openTime.hour * 60 + $scope.openTime.minute;
+				var deltaHours;
+				var deltaMins;
+
+				if($scope.doorState === 'closed') {
+					if(currentMinutes <= openMinutes || currentMinutes >= closeMinutes) {
+						$scope.doorHealth = $scope.doorStates.ok;
+						if(currentTime.getHours() < $scope.closeTime.hour) {
+							// morning time
+							deltaHours = Math.floor((openMinutes - currentMinutes) / 60);
+							deltaMins = (openMinutes - currentMinutes) % 60;
+						} else {
+							// night time
+							deltaHours = Math.floor((24*60 - currentMinutes + openMinutes) / 60);
+							deltaMins = (24*60 - currentMinutes + openMinutes) % 60;
+						}
+						$scope.nextOpMessage = 'Opening in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
+					} else {
+						$scope.doorHealth = $scope.doorStates.danger;
+					}
+				} else if($scope.doorState === 'open') {
+					if(currentMinutes >= openMinutes && currentMinutes <= closeMinutes) {
+						$scope.doorHealth = $scope.doorStates.ok;
+					} else {
+						$scope.doorHealth = $scope.doorStates.danger;
+					}
+					deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
+					deltaMins = (closeMinutes - currentMinutes) % 60;
+
+					$scope.nextOpMessage = 'Closing in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
+				} else {
+					$scope.doorHealth = $scope.doorStates.transitioning;
+				}
+			}
+		};
+
 		var update = function() {
 			coopService.getClosingTime(function(err, closeTime) {
 				if(err) {
 					$scope.closeTime = 'error';
-					$scope.doorHealth = $scope.doorStates.ok;
 				} else {
 					$scope.closeTime = closeTime;	
+					computeNextOpMessage();
 				}
-				coopService.getOpeningTime(function(err, openTime) {
-					if(err) {
-						$scope.openTime = 'error';
-						$scope.doorHealth = $scope.doorStates.error;
-					} else {
-						$scope.openTime = openTime;	
-					}
-					coopService.getDoorState(function(err, doorState) {
-						if(err) {
-							$scope.doorState = 'error';
-							$scope.doorHealth = $scope.doorStates.error;
-						} else {
-							$scope.doorState = doorState;	
-							var currentTime = new Date();
-							var currentMinutes = currentTime.getHours()*60 + currentTime.getMinutes();
-							var closeMinutes = closeTime.hour * 60 + closeTime.minute;
-							var openMinutes = openTime.hour * 60 + openTime.minute;
-							var deltaHours;
-							var deltaMins;
+			});
 
-							if(doorState === 'closed') {
-								if(currentMinutes <= openMinutes || currentMinutes >= closeMinutes) {
-									$scope.doorHealth = $scope.doorStates.ok;
-									if(currentTime.getHours() < closeTime.hour) {
-										// morning time
-										deltaHours = Math.floor((openMinutes - currentMinutes) / 60);
-										deltaMins = (openMinutes - currentMinutes) % 60;
-									} else {
-										// night time
-										deltaHours = Math.floor((24*60 - currentMinutes + openMinutes) / 60);
-										deltaMins = (24*60 - currentMinutes + openMinutes) % 60;
-									}
-									$scope.nextOpMessage = 'Opening in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
-								} else {
-									$scope.doorHealth = $scope.doorStates.danger;
-								}
-							} else if(doorState === 'open') {
-								if(currentMinutes >= openMinutes && currentMinutes <= closeMinutes) {
-									$scope.doorHealth = $scope.doorStates.ok;
-								} else {
-									$scope.doorHealth = $scope.doorStates.danger;
-								}
-								deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
-								deltaMins = (closeMinutes - currentMinutes) % 60;
+			coopService.getOpeningTime(function(err, openTime) {
+				if(err) {
+					$scope.openTime = 'error';
+				} else {
+					$scope.openTime = openTime;	
+					computeNextOpMessage();
+				}
+			});
 
-								$scope.nextOpMessage = 'Closing in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
-							} else {
-								$scope.doorHealth = $scope.doorStates.transitioning;
-							}
-						}
-					});
-				});
+			coopService.getDoorState(function(err, doorState) {
+				if(err) {
+					$scope.doorState = 'error';
+				} else {
+					$scope.doorState = doorState;	
+					computeNextOpMessage();
+				}
 			});
 
 			coopService.getUptime(function(err, uptime) {
@@ -102,14 +108,6 @@ angular.module(appName)
 					var hours = Math.floor((uptime / (3600 * 1000)) % 24);
 					var minutes = Math.floor((uptime / (60 * 1000)) % 60);
 					$scope.uptime = days + ' days, ' + hours + ' hrs, ' + minutes + ' mins';	
-				}
-			});
-
-			coopService.getLight(function(err, light) {
-				if(err) {
-					$scope.light = 'error';
-				} else {
-					$scope.light = light;	
 				}
 			});
 
@@ -165,65 +163,16 @@ angular.module(appName)
 		};
 
 		var getHealth = function() {
-			coopService.getReadErrorCount(function(err, readErrors) {
+			coopService.getHealth(function(err, health) {
 				if(!err) {
-					$scope.readErrors = readErrors;
+					$scope.health = health;
 				} else {
-					$log.error('Error getting read error count');
+					$log.error('Error getting health');
 				}
-				coopService.getWriteErrorCount(function(err, writeErrors) {
-					if(!err) {
-						$scope.writeErrors = writeErrors;
-					} else {
-						$log.error('Error getting write error count');
-					}
-					coopService.getAutoResetCount(function(err, autoResets) {
-						if(!err) {
-							$scope.autoResets = autoResets;
-							$scope.unhealthy = ($scope.autoResets + $scope.readErrors + $scope.writeErrors) > 0;
-						} else {
-							$log.error('Error getting auto reset count');
-						}
-						coopService.getLastRead(function(err, lastRead) {
-							if(!err) {
-								$scope.lastRead = new Date(lastRead).toString();
-							} else {
-								$log.error('Error getting last read');
-							}
-							coopService.getLastRead(function(err, lastWrite) {
-								if(!err) {
-									$scope.lastWrite = new Date(lastWrite).toString();
-								} else {
-									$log.error('Error getting last write');
-								}	
-								coopService.getLastError(function(err, lastError) {
-									if(!err) {
-										if(lastError === -1) {
-											$scope.lastError = 'No errors yet';
-										} else {
-											$scope.lastError = new Date(lastError).toString();	
-										}
-										coopService.getLongestUptime(function(err, longestUptime) {
-											if(!err) {
-												var days = Math.floor(longestUptime / (24 * 3600 * 1000));
-												var hours = Math.floor((longestUptime / (3600 * 1000)) % 24);
-												var minutes = Math.floor((longestUptime / (60 * 1000)) % 60);
-												$scope.longestUptime = days + ' days, ' + hours + ' hrs, ' + minutes + ' mins';	
-											} else {
-												$log.error('Error getting longest uptime');
-											}	
-										});
-									} else {
-										$log.error('Error getting last error');
-									}	
-								});
-							});
-						});
-					});
-				});
 			});
 		};
 
+		update();
 		$interval(update, 5000);
 
 		getHealth();

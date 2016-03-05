@@ -65,45 +65,17 @@ function setup(app, url, controller) {
 		res.end();
 	});
 
-	app.get(url + '/rerrors', function(req, res) {
+	app.get(url + '/health', function(req, res) {
 		log.trace('Entering get ' + url + '/rerrors');
-		res.status(200).json(controller.getReadErrorCount());
-		res.end();
-	});
-
-	app.get(url + '/werrors', function(req, res) {
-		log.trace('Entering get ' + url + '/werrors');
-		res.status(200).json(controller.getWriteErrorCount());
-		res.end();
-	});
-
-	app.get(url + '/autoresets', function(req, res) {
-		log.trace('Entering get ' + url + '/autoresets');
-		res.status(200).json(controller.getAutoResetCount());
-		res.end();
-	});
-
-	app.get(url + '/lasterror', function(req, res) {
-		log.trace('Entering get ' + url + '/lasterror');
-		res.status(200).json(controller.getLastError());
-		res.end();
-	});
-
-	app.get(url + '/lastread', function(req, res) {
-		log.trace('Entering get ' + url + '/lastread');
-		res.status(200).json(controller.getLastSuccessfulRead());
-		res.end();
-	});
-
-	app.get(url + '/lastwrite', function(req, res) {
-		log.trace('Entering get ' + url + '/lastwrite');
-		res.status(200).json(controller.getLastSuccessfulWrite());
-		res.end();
-	});
-
-	app.get(url + '/longestuptime', function(req, res) {
-		log.trace('Entering get ' + url + '/longestuptime');
-		res.status(200).json(controller.getLongestUptime());
+		var health = {};
+		health.readErrors = controller.getReadErrorCount();
+		health.writeErrors = controller.getWriteErrorCount();
+		health.autoResets = controller.getAutoResetCount();
+		health.lastError = controller.getLastError();
+		health.lastRead = controller.getLastSuccessfulRead();
+		health.lastWrite = controller.getLastSuccessfulWrite();
+		health.longestUptime = controller.getLongestUptime();
+		res.status(200).json(health);
 		res.end();
 	});
 
