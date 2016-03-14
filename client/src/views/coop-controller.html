@@ -3,11 +3,11 @@
 		<div class="col-xs-8">
 			<div class="row">
 				<div class="col-xs-4" style="font-weight: bold;">Opening:</div>
-				<div class="col-xs-8">{{openTime.hour}}:{{openTime.minute}}</div>
+				<div class="col-xs-8">{{displayOpenTime()}}</div>
 			</div>
 			<div class="row">
 				<div class="col-xs-4" style="font-weight: bold;">Closing:</div>
-				<div class="col-xs-8">{{closeTime.hour}}:{{closeTime.minute}}</div>
+				<div class="col-xs-8">{{displayCloseTime()}}</div>
 			</div>
 			<div class="row">
 				<div class="col-xs-4" style="font-weight: bold;">Door:</div>
@@ -43,8 +43,8 @@
 			<br/>
 		</div>
 		<div class="col-xs-12">
-			<button type="button" class="btn btn-primary" ng-disabled="doorState!=='open' || mode === 'manual'" ng-click="closeDoor()"><span ng-show="closeActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Close</button>
-			<button type="button" class="btn btn-primary" ng-disabled="doorState!=='closed' || mode === 'manual'" ng-click="openDoor()"><span ng-show="openActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Open</button>
+			<button type="button" class="btn btn-primary" ng-disabled="doorState==='closed'"" || mode === 'manual'" ng-click="closeDoor()"><span ng-show="closeActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Close</button>
+			<button type="button" class="btn btn-primary" ng-disabled="doorState==='open'" || mode === 'manual'" ng-click="openDoor()"><span ng-show="openActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Open</button>
 		</div>
 	</div>
 

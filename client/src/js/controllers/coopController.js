@@ -3,9 +3,9 @@
 var appName = 'coopApp';
 angular.module(appName)
 .controller(appName + '.coopController', 
-	['$scope', '$log', '$interval',
+	['$scope', '$log', '$interval', '$window',
 	appName + '.coopService', appName + '.videoService', 
-	function($scope, $log, $interval, coopService, videoService) {
+	function($scope, $log, $interval, $window, coopService, videoService) {
 		$scope.openTime = '?';
 		$scope.closeTime = '?';
 		$scope.doorStates = {
@@ -170,6 +170,25 @@ angular.module(appName)
 					$log.error('Error getting health');
 				}
 			});
+		};
+
+		var displayTime = function(time) {
+			if(time === '?') {
+				return time;
+			}
+			var d = new Date();
+			d.setHours(time.hour);
+			d.setMinutes(time.minute);
+			d.setSeconds(0);
+			return d.toLocaleTimeString($window.navigator.language, {hour: '2-digit', minute:'2-digit'});
+		};
+
+		$scope.displayCloseTime = function() {
+			return displayTime($scope.closeTime);
+		};
+
+		$scope.displayOpenTime = function() {
+			return displayTime($scope.openTime);
 		};
 
 		update();
