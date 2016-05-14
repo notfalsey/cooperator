@@ -6,7 +6,7 @@
     "defaultWeatherData": {
         "sun_phase": {
             "sunset": {
-                "hour": 8,
+                "hour": 20,
                 "minute": 15
             },
             "sunrise": {
