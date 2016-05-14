@@ -3,13 +3,25 @@
 	"state": "NC",
 	"city": "Carrboro",
 	"wundergroundApiKey": "?",
+    "defaultWeatherData": {
+        "sun_phase": {
+            "sunset": {
+                "hour": 8,
+                "minute": 15
+            },
+            "sunrise": {
+                "hour": 6,
+                "minute": 15
+            }
+        }
+    },
 	"sunriseDeltaMinutes": -30,
 	"sunsetDeltaMinutes": 30,
 	"i2cAddress": 5,
 	"logging": {
-        "level": "trace",
+        "level": "info",
         "count": 10,
-        "size": 100000
+        "size": 10000
     },
     "cameraIp": "192.168.1.110",
     "cameraUser": "?",

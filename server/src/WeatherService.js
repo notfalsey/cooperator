@@ -4,7 +4,8 @@ var http = require('http'),
 function WeatherService(config) {
 	this.astronomyUrl = 'http://api.wunderground.com/api/' + config.wundergroundApiKey + '/astronomy/q/' + config.state + '/' + config.city + '.json';
 	log.debug({url: this.astronomyUrl}, 'Initializing weather service');
-	this.astronomyData = null;
+	this.astronomyData = config.defaultWeatherData;
+	log.info({default: this.astronomyData}, 'Using default weather data until a successful read from service');
 	this.refresh();
 	this.errorCount = 0;
 	// refresh every 12 hours
@@ -26,7 +27,7 @@ WeatherService.prototype = {
 		});
 	},
 	getData: function(url, callback) {
-		http.get(url, function(res) {
+		var req = http.get(url, function(res) {
 			var resData = '';
 			res.on('data', function(data) {
 				resData += data;
@@ -36,6 +37,17 @@ WeatherService.prototype = {
   				log.debug({resData: resData}, 'Received data from weather service');
   				callback(null, JSON.parse(resData));
   			});
+
+  			res.on('error', function(err) {
+  				var msg = 'Error fetching data from weather service';
+  				log.error({err: err}, msg);
+  				callback(new Error(msg));
+  			});
+		});	
+		req.on('error', function(err) {
+			var msg = 'Error fetching data from weather service';
+			log.error({err: err}, msg);
+			callback(new Error(msg));
 		});
 	}, 
 	getSunset: function() {

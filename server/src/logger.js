@@ -8,7 +8,7 @@ var logger;
 
 function createLogger(createNew, configFileName) {
     if (!configFileName) {
-        configFileName = __dirname + '/../configs/config.json';
+        configFileName = __dirname + '/../config/config.json';
     }
 
     if (logger && createNew !== true) {
@@ -112,7 +112,7 @@ function createLogger(createNew, configFileName) {
 
     // If no period or size was specified, default to size.
     if (!logConfig.period && !logConfig.size) {
-        logInitSettings.streams[1].size = 100000000;
+        logInitSettings.streams[1].size = 10000000;
     }
 
     logger = bunyan.createLogger(logInitSettings);

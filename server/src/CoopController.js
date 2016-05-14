@@ -173,8 +173,10 @@ CoopController.prototype = {
 									// first lets compare current state against previous state and send a notification of state change if necessary
 									if(self.enableMailNotify === true && self.lastNonErrorDoorState === self.doorStates.transitioning) {
 										if(door === self.doorStates.open) {
+											log.info('Door is now open');
 											self.notifyService.notify('Door opened', 'Its a brand new day!');
 										} else if(door === self.doorStates.closed) {
+											log.info('Door is now closed');
 											self.notifyService.notify('Door closed', 'Safe and sound.');
 										}
 									}
@@ -362,7 +364,7 @@ CoopController.prototype = {
 					if(err) {
 						log.error({err: err}, 'Error closing coop door');
 					} else {
-						log.info('Closed coop door');
+						log.trace('Sent close coop door command');
 					}
 					callback(err);
 				});
@@ -373,7 +375,7 @@ CoopController.prototype = {
 					if(err) {
 						log.error({err: err}, 'Error opening coop door');
 					} else {
-						log.info('Opened coop door');
+						log.trace('Sent open coop door command');
 					}
 					callback(err);
 				});
