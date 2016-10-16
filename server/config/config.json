@@ -1,8 +1,8 @@
 {
-	"httpsPort": 9443,
-	"state": "NC",
-	"city": "Carrboro",
-	"wundergroundApiKey": "?",
+    "httpsPort": 9443,
+    "state": "NC",
+    "city": "Carrboro",
+    "wundergroundApiKey": "?",
     "defaultWeatherData": {
         "sun_phase": {
             "sunset": {
@@ -15,10 +15,10 @@
             }
         }
     },
-	"sunriseDeltaMinutes": -30,
-	"sunsetDeltaMinutes": 30,
-	"i2cAddress": 5,
-	"logging": {
+    "sunriseDeltaMinutes": -30,
+    "sunsetDeltaMinutes": 30,
+    "i2cAddress": 5,
+    "logging": {
         "level": "info",
         "count": 10,
         "size": 10000
@@ -32,7 +32,7 @@
     "allowedUsers": [],
     "enableMailNotify": true,
     "mailRecipients": [],
-	"mailFrom": "?",
-	"mailDomain": "?",
-	"mailApiKey": "?"
+    "mailFrom": "?",
+    "mailDomain": "?",
+    "mailApiKey": "?"
 }

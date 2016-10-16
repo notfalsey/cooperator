@@ -7,8 +7,7 @@ var async = require('async'),
     props = require('./Properties.js'),
     log = require('./logger.js')();
 
-function CertificateManager() {
-}
+function CertificateManager() {}
 
 CertificateManager.prototype = {
     constructor: CertificateManager,

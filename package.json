@@ -1,8 +1,9 @@
 {
   "name": "CoopWeb",
-  "repository": "https://github.com/notfalsey/coopweb/",
+  "repository": "https://github.com/notfalsey/cooperator/",
   "dependencies": {
     "async": "^1.5.2",
+    "bluebird": "^3.4.6",
     "body-parser": "^1.14.2",
     "bunyan": "^1.5.1",
     "connect-flash": "^0.1.1",
@@ -10,10 +11,12 @@
     "express": "^4.13.4",
     "express-session": "^1.13.0",
     "fs-extra": "^0.26.5",
-    "i2c": "0.2.1",
     "mailgun-js": "^0.7.7",
     "passport": "^0.3.2",
     "passport-google-oauth20": "^1.0.0"
+  },
+  "optionalDependencies": {
+    "i2c": "0.2.1"
   },
   "scripts": {
     "start": "node server/src/Server.js",
@@ -21,8 +24,13 @@
   },
   "devDependencies": {
     "bower": "^1.7.7",
-    "grunt": "^0.4.5",
-    "grunt-contrib-jshint": "^0.12.0",
-    "grunt-exec": "^0.4.6"
+    "grunt": "^1.0.1",
+    "grunt-contrib-jshint": "^1.0.0",
+    "grunt-exec": "^1.0.1",
+    "grunt-jsbeautifier": "^0.2.13",
+    "grunt-mocha-istanbul": "^5.0.2",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.1.2",
+    "supertest": "^2.0.0"
   }
 }

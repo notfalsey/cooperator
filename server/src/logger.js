@@ -15,7 +15,6 @@ function createLogger(createNew, configFileName) {
         return logger;
     }
 
-
     function reqSerializer(req) {
         if (!req || !req.connection) {
             return req;
@@ -91,7 +90,7 @@ function createLogger(createNew, configFileName) {
             err: errSerializer
         },
         streams: [{
-            level: 'warning',
+            level: 'fatal',
             stream: process.stderr
         }, {
             type: 'rotating-file',

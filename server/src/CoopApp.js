@@ -1,31 +1,33 @@
 'use strict';
 
 var bodyParser = require('body-parser'),
-    cookieParser     = require( 'cookie-parser' ),
+    cookieParser = require('cookie-parser'),
     express = require('express'),
     flash = require('connect-flash'),
-	fs = require('fs-extra'),
-	https = require('https'),
-	props = require('./Properties.js'),
+    fs = require('fs-extra'),
+    https = require('https'),
+    props = require('./Properties.js'),
     CoopController = require('./CoopController.js'),
     WeatherService = require('./WeatherService.js'),
     passport = require('passport'),
     session = require('express-session'),
     GoogleStrategy = require('passport-google-oauth20').Strategy,
-	log = require('./logger.js')();
+    log = require('./logger.js')();
 
-function configure (app, config) {
+function configure(app, config) {
     log.trace('Configuring coop app');
-	app.use(cookieParser()); 
+    app.use(cookieParser());
     app.use(bodyParser.json()); // for parsing application/json
     app.use(flash());
-    app.use( session({ 
+    app.use(session({
         secret: 'cookie_secret',
-        name:   'kaas',
-        proxy:  true,
+        name: 'kaas',
+        proxy: true,
         resave: true,
         saveUninitialized: true,
-        cookie: {secure: true }
+        cookie: {
+            secure: true
+        }
     }));
 
     app.set('trust proxy', 1); // trust first proxy 
@@ -38,43 +40,54 @@ function configure (app, config) {
     //   have a database of user records, the complete Google profile is
     //   serialized and deserialized.
     passport.serializeUser(function(user, done) {
-      done(null, user);
+        done(null, user);
     });
 
     passport.deserializeUser(function(obj, done) {
-      done(null, obj);
+        done(null, obj);
     });
     passport.use(new GoogleStrategy({
-        clientID: config.googleOauthClientId,
-        clientSecret: config.googleOauthClientSecret,
-        callbackURL: config.googleCallbackUrl
-      },
-      function(identifier, accessToken, refreshToken, profile, done) {
-        log.trace({identifier: identifier, accessToken: accessToken, refreshToken: refreshToken, profile: profile}, 'Got google profile');
-        for(var i = 0; i < profile.emails.length; i++) {
-            if(config.allowedUsers.indexOf(profile.emails[i].value) !== -1) {
-                log.trace({email: profile.emails[i].value}, 'User is authorized');
-                done(null, profile);    
-                return;
-            }    
-        }
-        // none of the emails for this profile are in the authorized users list
-        var msg = 'Invalid e-mail address or password';
-        log.trace(msg);
-        done(null, false, { message : msg });
-    }));
+            clientID: config.googleOauthClientId,
+            clientSecret: config.googleOauthClientSecret,
+            callbackURL: config.googleCallbackUrl
+        },
+        function(identifier, accessToken, refreshToken, profile, done) {
+            log.trace({
+                identifier: identifier,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                profile: profile
+            }, 'Got google profile');
+            for (var i = 0; i < profile.emails.length; i++) {
+                if (config.allowedUsers.indexOf(profile.emails[i].value) !== -1) {
+                    log.trace({
+                        email: profile.emails[i].value
+                    }, 'User is authorized');
+                    done(null, profile);
+                    return;
+                }
+            }
+            // none of the emails for this profile are in the authorized users list
+            var msg = 'Invalid e-mail address or password';
+            log.trace(msg);
+            done(null, false, {
+                message: msg
+            });
+        }));
 
-    app.use( passport.initialize());
-    app.use( passport.session());
-    
+    app.use(passport.initialize());
+    app.use(passport.session());
+
     // GET /auth/google
     //   Use passport.authenticate() as route middleware to authenticate the
     //   request.  The first step in Google authentication will involve
     //   redirecting the user to google.com.  After authorization, Google
     //   will redirect the user back to this application at /auth/google/callback
-    app.get('/auth/google', passport.authenticate('google', { scope: [
-           'https://www.googleapis.com/auth/plus.login',
-           'https://www.googleapis.com/auth/plus.profile.emails.read'] 
+    app.get('/auth/google', passport.authenticate('google', {
+        scope: [
+            'https://www.googleapis.com/auth/plus.login',
+            'https://www.googleapis.com/auth/plus.profile.emails.read'
+        ]
     }));
 
     // GET /auth/google/callback
@@ -82,21 +95,21 @@ function configure (app, config) {
     //   request.  If authentication fails, the user will be redirected back to the
     //   login page.  Otherwise, the primary route function function will be called,
     //   which, in this example, will redirect the user to the home page.
-    app.get( '/auth/google/callback', 
-        passport.authenticate( 'google', { 
+    app.get('/auth/google/callback',
+        passport.authenticate('google', {
             successRedirect: '/',
             //failureRedirect: '/login',
             faliureFlash: true
         }));
-    
+
 
     app.get('/login', function(req, res) {
         res.end('<a href="/auth/google">Login with Google</a>');
     });
 
-    app.get('/logout', function(req, res){
-      req.logout();
-      res.redirect('/');
+    app.get('/logout', function(req, res) {
+        req.logout();
+        res.redirect('/');
     });
 
     // Simple route middleware to ensure user is authenticated.
@@ -105,9 +118,9 @@ function configure (app, config) {
     //   the request will proceed.  Otherwise, the user will be redirected to the
     //   login page.
     app.use(function ensureAuthenticated(req, res, next) {
-        if (req.isAuthenticated()) { 
+        if (req.isAuthenticated()) {
             log.trace('request is authenticated.');
-            return next(); 
+            return next();
         }
         log.trace('request is not authenticated.');
         res.redirect('/login');
@@ -125,16 +138,16 @@ function configure (app, config) {
 function CoopApp() {
     log.trace('Creating coop app');
     this.config = fs.readJsonSync(props.getConfigJson());
-	this.app = express();
-	configure(this.app, this.config);
+    this.app = express();
+    configure(this.app, this.config);
 }
 
 CoopApp.prototype = {
-	
-	start: function(keyPath, certPath, callback) {
+
+    start: function(keyPath, certPath, callback) {
         log.trace('Starting coop app');
         log.trace('Reading SSL key pair');
-		var options = {
+        var options = {
             key: fs.readFileSync(keyPath),
             cert: fs.readFileSync(certPath)
         };
@@ -150,8 +163,8 @@ CoopApp.prototype = {
                 if (callback) {
                     callback(err);
                 }
-            });        
-	}
+            });
+    }
 };
 
 module.exports = CoopApp;
