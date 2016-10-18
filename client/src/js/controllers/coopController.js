@@ -72,55 +72,52 @@ angular.module(appName)
             };
 
             var update = function() {
-                coopService.getClosingTime(function(err, closeTime) {
-                    if (err) {
-                        $scope.closeTime = 'error';
-                    } else {
-                        $scope.closeTime = closeTime;
-                        computeNextOpMessage();
-                    }
+                coopService.getClosingTime().then(function(closeTime) {
+                    $scope.closeTime = closeTime;
+                    computeNextOpMessage();
+                }, function(err) {
+                    $log.error('Error getting closing time, err: ', err);
+                    $scope.closeTime = 'error';
                 });
 
-                coopService.getOpeningTime(function(err, openTime) {
-                    if (err) {
-                        $scope.openTime = 'error';
-                    } else {
-                        $scope.openTime = openTime;
-                        computeNextOpMessage();
-                    }
+                coopService.getOpeningTime().then(function(openTime) {
+                    $scope.openTime = openTime;
+                    computeNextOpMessage();
+                }, function(err) {
+                    $log.error('Error getting opening time, err: ', err);
+                    $scope.openTime = 'error';
                 });
 
-                coopService.getDoorState(function(err, doorState) {
-                    if (err) {
-                        $scope.doorState = 'error';
-                    } else {
-                        $scope.doorState = doorState;
-                        computeNextOpMessage();
-                    }
+                coopService.getDoorState().then(function(doorState) {
+                    $scope.doorState = doorState;
+                    computeNextOpMessage();
+                }, function(err) {
+                    $log.error('Error getting door state, err: ', err);
+                    $scope.doorState = 'error';
                 });
 
-                coopService.getUptime(function(err, uptime) {
-                    if (err) {
-                        $scope.uptime = 'error';
-                    } else {
-                        var days = Math.floor(uptime / (24 * 3600 * 1000));
-                        var hours = Math.floor((uptime / (3600 * 1000)) % 24);
-                        var minutes = Math.floor((uptime / (60 * 1000)) % 60);
-                        $scope.uptime = days + ' days, ' + hours + ' hrs, ' + minutes + ' mins';
-                    }
+                coopService.getUptime().then(function(uptime) {
+                    var days = Math.floor(uptime / (24 * 3600 * 1000));
+                    var hours = Math.floor((uptime / (3600 * 1000)) % 24);
+                    var minutes = Math.floor((uptime / (60 * 1000)) % 60);
+                    $scope.uptime = days + ' days, ' + hours + ' hrs, ' + minutes + ' mins';
+                }, function(err) {
+                    $log.error('Error getting uptime, err: ', err);
+                    $scope.uptime = 'error';
                 });
 
-                coopService.getMode(function(err, mode) {
-                    if (err) {
-                        $scope.mode = 'error';
-                    } else {
-                        $scope.mode = mode;
-                    }
+                coopService.getMode().then(function(mode) {
+                    $scope.mode = mode;
+                }, function(err) {
+                    $log.error('Error getting mode, err: ', err);
+                    $scope.mode = 'error';
                 });
             };
 
             $scope.autoDoor = function() {
-                coopService.commandDoor('auto').catch(function(err) {
+                coopService.commandDoor('auto').then(function() {
+                    $log.debug('Door auto command sent successfully.');
+                }, function(err) {
                     $log.error('Error commanding door into auto mode, err: ', err);
                 });
             };
@@ -130,7 +127,9 @@ angular.module(appName)
                 $interval(function() {
                     $scope.closeActive = false;
                 }, 20000, 1);
-                coopService.commandDoor('close').catch(function(err) {
+                coopService.commandDoor('close').then(function() {
+                    $log.debug('Door close command sent successfully.');
+                }, function(err) {
                     $log.error('Error commanding door ito close, err: ', err);
                 });
             };
@@ -140,7 +139,9 @@ angular.module(appName)
                 $interval(function() {
                     $scope.openActive = false;
                 }, 20000, 1);
-                coopService.commandDoor('open').catch(function(err) {
+                coopService.commandDoor('open').then(function() {
+                    $log.debug('Door open command sent successfully.');
+                }, function(err) {
                     $log.error('Error commanding door ito open, err: ', err);
                 });
             };
@@ -150,8 +151,10 @@ angular.module(appName)
                 $interval(function() {
                     $scope.resetActive = false;
                 }, 20000, 1);
-                coopService.reset(function(err) {
+                coopService.reset().then(function() {
                     update();
+                }, function(err) {
+                    $log.error('Error resetting coop, err: ', err);
                 });
             };
 
@@ -168,12 +171,11 @@ angular.module(appName)
             };
 
             var getHealth = function() {
-                coopService.getHealth(function(err, health) {
-                    if (!err) {
-                        $scope.health = health;
-                    } else {
-                        $log.error('Error getting health');
-                    }
+                coopService.getHealth().then(function(health) {
+                    $scope.health = health;
+                }, function(err) {
+                    $log.error('Error getting health, err: ' + err);
+                    $scope.health = 'error';
                 });
             };
 

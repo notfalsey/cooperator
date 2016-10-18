@@ -4,7 +4,6 @@ var assert = require('assert'),
     Promise = require('bluebird'),
     bodyParser = require('body-parser'),
     express = require('express'),
-    //request = require('supertest-as-promised'),
     request = require('supertest'),
     sinon = require('sinon'),
     coop = require('../../src/routes/coop');

@@ -6,71 +6,52 @@ angular.module(appName)
 
         var baseUrl = '/coop';
 
-        var commandDoor = function(dir, callback) {
-            $http.put(baseUrl + '/door', {
-                    dir: dir
-                })
-                .success(function(data, status, headers, config) {
-                    callback(null, data);
-                })
-                .error(function(data, status, headers, config) {
-                    $log.error('Error sending door command dir = ' + dir + ', status=' + status + ': ' + data);
-                    callback(new Error(data));
-                });
+        var commandDoor = function(dir) {
+            return $http.put(baseUrl + '/door', {
+                dir: dir
+            });
         };
 
-        var reset = function(dir, callback) {
-            $http.put(baseUrl + '/reset', {})
-                .success(function(data, status, headers, config) {
-                    callback(null, data);
-                })
-                .error(function(data, status, headers, config) {
-                    $log.error('Error sending door command dir = ' + dir + ', status=' + status + ': ' + data);
-                    callback(new Error(data));
-                });
+        var reset = function(callback) {
+            return $http.put(baseUrl + '/reset', {});
         };
 
-        var getCoopData = function(valueName, callback) {
-            $http.get(baseUrl + '/' + valueName, {})
-                .success(function(data, status, headers, config) {
-                    callback(null, data);
-                })
-                .error(function(data, status, headers, config) {
-                    $log.error('Error getting coop data (' + valueName + '), status=' + status + ': ' + data);
-                    callback(new Error(data));
-                });
+        var getCoopData = function(valueName) {
+            return $http.get(baseUrl + '/' + valueName).then(function(response) {
+                return response.data;
+            });
         };
 
-        var getDoorState = function(callback) {
-            getCoopData('door', callback);
+        var getDoorState = function() {
+            return getCoopData('door');
         };
 
-        var getUptime = function(callback) {
-            getCoopData('uptime', callback);
+        var getUptime = function() {
+            return getCoopData('uptime');
         };
 
-        var getLight = function(callback) {
-            getCoopData('light', callback);
+        var getLight = function() {
+            return getCoopData('light');
         };
 
-        var getTemp = function(callback) {
-            getCoopData('temp', callback);
+        var getTemp = function() {
+            return getCoopData('temp');
         };
 
-        var getClosingTime = function(callback) {
-            getCoopData('closetime', callback);
+        var getClosingTime = function() {
+            return getCoopData('closetime');
         };
 
-        var getOpeningTime = function(callback) {
-            getCoopData('opentime', callback);
+        var getOpeningTime = function() {
+            return getCoopData('opentime');
         };
 
-        var getHealth = function(callback) {
-            getCoopData('health', callback);
+        var getHealth = function() {
+            return getCoopData('health');
         };
 
-        var getMode = function(callback) {
-            getCoopData('mode', callback);
+        var getMode = function() {
+            return getCoopData('mode');
         };
 
         return {
@@ -78,6 +59,7 @@ angular.module(appName)
             getClosingTime: getClosingTime,
             getDoorState: getDoorState,
             getHealth: getHealth,
+            getLight: getLight,
             getMode: getMode,
             getOpeningTime: getOpeningTime,
             getTemp: getTemp,

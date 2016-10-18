@@ -2,13 +2,14 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-exec');
     grunt.loadNpmTasks('grunt-jsbeautifier');
+    grunt.loadNpmTasks('grunt-karma');
     grunt.loadNpmTasks('grunt-mocha-istanbul');
 
     grunt.initConfig({
         jsbeautifier: {
             beautify: {
                 src: ['Gruntfile.js', 'client/**/*.js', 'client/**/*.html', 'client/**/*.css',
-                    'client/**/*.json', 'server/**/*.js', 'server/**/*.json', '!client/deps'
+                    'client/**/*.json', 'server/**/*.js', 'server/**/*.json', '!client/deps/**/*'
                 ]
             },
             check: {
@@ -16,7 +17,7 @@ module.exports = function(grunt) {
                     mode: 'VERIFY_ONLY'
                 },
                 src: ['Gruntfile.js', 'client/**/*.js', 'client/**/*.html', 'client/**/*.css',
-                    'client/**/*.json', 'server/**/*.js', 'server/**/*.json', '!client/deps'
+                    'client/**/*.json', 'server/**/*.js', 'server/**/*.json', '!client/deps/**/*'
                 ]
             }
         },
@@ -49,6 +50,11 @@ module.exports = function(grunt) {
                 esversion: 6
             }
         },
+        karma: {
+            dev: {
+                configFile: 'karma.js'
+            }
+        },
         exec: {
             bower: "bower install"
         },
@@ -71,6 +77,6 @@ module.exports = function(grunt) {
 
 
 
-    grunt.registerTask('default', ['exec:bower', 'jshint', 'jsbeautifier:check', 'mocha_istanbul:coverage']);
+    grunt.registerTask('default', ['exec:bower', 'jshint', 'jsbeautifier:check', 'mocha_istanbul:coverage', 'karma:dev']);
     grunt.registerTask('bfy', ['jsbeautifier:beautify']);
 };
