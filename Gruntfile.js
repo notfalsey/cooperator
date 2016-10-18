@@ -77,6 +77,6 @@ module.exports = function(grunt) {
 
 
 
-    grunt.registerTask('default', ['exec:bower', 'jshint', 'jsbeautifier:check', 'mocha_istanbul:coverage', 'karma:dev']);
+    grunt.registerTask('default', ['exec:bower', 'jshint', 'jsbeautifier:check', 'karma:dev', 'mocha_istanbul:coverage']);
     grunt.registerTask('bfy', ['jsbeautifier:beautify']);
 };
