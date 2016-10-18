@@ -2,18 +2,22 @@
 
 var appName = 'coopApp';
 angular.module(appName)
-    .factory(appName + '.coopService', ['$http', '$log', '$interval', '$location', function($http, $log, $interval, $location) {
+    .factory('coopService', ['$http', '$log', '$interval', '$location', function($http, $log, $interval, $location) {
 
         var baseUrl = '/coop';
 
         var commandDoor = function(dir) {
             return $http.put(baseUrl + '/door', {
                 dir: dir
+            }).then(function(response) {
+                return response.data;
             });
         };
 
         var reset = function(callback) {
-            return $http.put(baseUrl + '/reset', {});
+            return $http.put(baseUrl + '/reset', {}).then(function(response) {
+                return response.data;
+            });
         };
 
         var getCoopData = function(valueName) {

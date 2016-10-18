@@ -10,7 +10,7 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'chai'],
+    frameworks: ['mocha', 'sinon', 'chai'],
 
     // list of files / patterns to load in the browser
     files: [
@@ -20,12 +20,7 @@ module.exports = function(config) {
       'client/src/js/app.js',
       'client/src/js/services/*.js',
       'client/src/js/controllers/*.js',
-      'client/test/**/*.js'
-    ],
-
-
-    // list of files to exclude
-    exclude: [
+      'client/test/js/**/*.js'
     ],
 
 

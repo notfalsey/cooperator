@@ -2,7 +2,7 @@
 
 var appName = 'coopApp';
 angular.module(appName)
-    .factory(appName + '.videoService', ['$http', '$log', '$interval', '$location', function($http, $log, $interval, $location) {
+    .factory('videoService', ['$http', '$log', '$interval', '$location', function($http, $log, $interval, $location) {
 
         var baseUrl = '/video';
 

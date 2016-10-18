@@ -2,8 +2,8 @@
 
 var appName = 'coopApp';
 angular.module(appName)
-    .controller(appName + '.coopController', ['$scope', '$log', '$interval', '$window',
-        appName + '.coopService', appName + '.videoService',
+    .controller('coopController', ['$scope', '$log', '$interval', '$window',
+        'coopService', 'videoService',
         function($scope, $log, $interval, $window, coopService, videoService) {
             $scope.openTime = '?';
             $scope.closeTime = '?';
@@ -115,7 +115,7 @@ angular.module(appName)
             };
 
             $scope.autoDoor = function() {
-                coopService.commandDoor('auto').then(function() {
+                return coopService.commandDoor('auto').then(function() {
                     $log.debug('Door auto command sent successfully.');
                 }, function(err) {
                     $log.error('Error commanding door into auto mode, err: ', err);

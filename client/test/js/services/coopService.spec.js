@@ -4,7 +4,7 @@ describe('coopService test', function() {
     var httpBackend, interval, location;
     var moduleName = 'coopApp';
     var baseUrl = '/coop';
-    var serviceName = moduleName + '.coopService';
+    var serviceName = 'coopService';
 
     beforeEach(function() {
         module(moduleName);
