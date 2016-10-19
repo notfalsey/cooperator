@@ -13,7 +13,7 @@ describe('coopController test', function() {
         videoService = _videoService_;
         $injector = _$injector_;
         $q = _$q_;
-        $rootScope = _$rootScope_
+        $rootScope = _$rootScope_;
         sinon.stub(coopService, 'getClosingTime', function() {
             return $q.when(new Date().getTime());
         });
