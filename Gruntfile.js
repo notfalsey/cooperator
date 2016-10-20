@@ -53,6 +53,9 @@ module.exports = function(grunt) {
         karma: {
             dev: {
                 configFile: 'karma.js'
+            },
+            debug: {
+                configFile: 'karma.debug.js'
             }
         },
         exec: {

@@ -2,74 +2,32 @@
 
 var appName = 'coopApp';
 angular.module(appName)
-    .factory('videoService', ['$http', '$log', '$interval', '$location', function($http, $log, $interval, $location) {
+    .factory('videoService', ['$http', function($http, $log, $interval, $location) {
 
         var baseUrl = '/video';
 
         var getVideo = function(callback) {
-            $http.get(baseUrl)
-                .success(function(data, status, headers, config) {
-                    if (callback) {
-                        callback(null, data);
-                    }
-                })
-                .error(function(data, status, headers, config) {
-                    $log.error('Error getting video: ' + status + ': ' + data);
-                    if (callback) {
-                        callback(new Error(data));
-                    }
-                });
+            return $http.get(baseUrl).then(function(response) {
+                return response.data;
+            });
         };
 
         var pan = function(dir, callback) {
-            $http.put(baseUrl + '/pan', {
-                    dir: dir
-                })
-                .success(function(data, status, headers, config) {
-                    if (callback) {
-                        callback(null, data);
-                    }
-                })
-                .error(function(data, status, headers, config) {
-                    $log.error('Error getting video: ' + status + ': ' + data);
-                    if (callback) {
-                        callback(new Error(data));
-                    }
-                });
+            return $http.put(baseUrl + '/pan', {
+                dir: dir
+            });
         };
 
         var setIR = function(ir, callback) {
-            $http.put(baseUrl + '/ir', {
-                    ir: ir
-                })
-                .success(function(data, status, headers, config) {
-                    if (callback) {
-                        callback(null, data);
-                    }
-                })
-                .error(function(data, status, headers, config) {
-                    $log.error('Error getting video: ' + status + ': ' + data);
-                    if (callback) {
-                        callback(new Error(data));
-                    }
-                });
+            return $http.put(baseUrl + '/ir', {
+                ir: ir
+            });
         };
 
         var goToPreset = function(preset, callback) {
-            $http.put(baseUrl + '/preset', {
-                    preset: preset
-                })
-                .success(function(data, status, headers, config) {
-                    if (callback) {
-                        callback(null, data);
-                    }
-                })
-                .error(function(data, status, headers, config) {
-                    $log.error('Error getting video: ' + status + ': ' + data);
-                    if (callback) {
-                        callback(new Error(data));
-                    }
-                });
+            return $http.put(baseUrl + '/preset', {
+                preset: preset
+            });
         };
 
         return {

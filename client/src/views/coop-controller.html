@@ -1,4 +1,4 @@
-<div ng-controller="coopApp.coopController">
+<div ng-controller="coopController">
     <div class="row">
         <div class="col-xs-8">
             <div class="row">
@@ -43,48 +43,49 @@
             <br/>
         </div>
         <div class="col-xs-12">
-            <button type="button" class="btn btn-primary" ng-disabled="doorState==='closed'" " || mode === 'manual'" ng-click="closeDoor()"><span ng-show="closeActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Close</button>
-            <button type="button" class="btn btn-primary" ng-disabled="doorState==='open'" || mode==='manual' " ng-click="openDoor() "><span ng-show="openActive " class="glyphicon glyphicon-refresh glyphicon-refresh-animate "></span>&nbsp;Open</button>
-		</div>
-	</div>
+            <button type="button" class="btn btn-primary" ng-disabled="doorState==='closed' || mode === 'manual'" ng-click="closeDoor()"><span ng-show="closeActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Close</button>
+            <button type="button" class="btn btn-primary" ng-disabled="doorState==='open' || mode==='manual'" ng-click="openDoor()"><span ng-show="openActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Open</button>
+        </div>
+    </div>
 
-	<br/>
+    <br/>
 
-	<div class="row ">
-		<div class="col-xs-12 ">
-			<button type="button " class="btn btn-default " ng-click="reset() "><span ng-show="resetActive " class="glyphicon glyphicon-refresh glyphicon-refresh-animate "></span>&nbsp;Reset</button>
-			<a href="/src/views/health.html "><button type="button " class="btn btn-default ">Health</button></a>
-			<div class="col-xs-12 ">
-		</div>
-	</div>
-	<br/>
-	<br/>
-	<br/>
+    <div class="row">
+        <div class="col-xs-12">
+            <button type="button" class="btn btn-default" ng-click="reset()"><span ng-show="resetActive" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp;Reset</button>
+            <a href="/src/views/health.html"><button type="button" class="btn btn-default">Health</button></a>
+            <div class="col-xs-12">
+            </div>
+        </div>
+        <br/>
+        <br/>
+        <br/>
 
-	<div class="row ">
-  		<div class="col-xs-12 ">
-  			<img width="350 " src="/video?t=z " onload='setTimeout(function() {src = src.substring(0, (src.lastIndexOf("t=")+2))+(new Date()).getTime()}, 1000)' onerror='setTimeout(function() {src = src.substring(0, (src.lastIndexOf(" t=")+2))+(new Date()).getTime()}, 5000)' alt='' />
-  		</div>
- 	</div>
- 	<br/>
- 	<div class=" row ">
-	 	<div class="row ">
-	 		<div class="col-xs-offset-2 col-xs-1 ">
-	 			<button type="button " class="btn btn-primary " ng-click="panVideo( 'up') "><span class="glyphicon glyphicon-chevron-up "></span></button>
-	  		</div>
-	  	</div>
-	  	<div class="row ">
-	 		<div class="col-xs-offset-1 col-xs-1 ">
-	 			<button type="button " class="btn btn-primary " ng-click="panVideo( 'left') "><span class="glyphicon glyphicon-chevron-left "></span></button>
-	  		</div>
-	  		<div class="col-xs-offset-1 col-xs-1 ">
-	 			<button type="button " class="btn btn-primary " ng-click="panVideo( 'right') "><span class="glyphicon glyphicon-chevron-right "></span></button>
-	  		</div>
-	  	</div>
-	  	<div class="row ">
-	 		<div class="col-xs-offset-2 col-xs-1 ">
-	 			<button type="button " class="btn btn-primary " ng-click="panVideo( 'down') "><span class="glyphicon glyphicon-chevron-down "></span></button>
-	  		</div>
-	  	</div>
-	</div>
-</div>
+        <div class="row">
+            <div class="col-xs-12">
+                <img width="350" src="/video?t=z" onload='setTimeout(function() {src = src.substring(0, (src.lastIndexOf("t=")+2))+(new Date()).getTime()}, 1000)' onerror='setTimeout(function() {src = src.substring(0, (src.lastIndexOf(" t=")+2))+(new Date()).getTime()}, 5000)'
+                    alt='' />
+            </div>
+        </div>
+        <br/>
+        <div class=" row">
+            <div class="row">
+                <div class="col-xs-offset-2 col-xs-1">
+                    <button type="button" class="btn btn-primary" ng-click="panVideo( 'up')"><span class="glyphicon glyphicon-chevron-up"></span></button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-offset-1 col-xs-1">
+                    <button type="button" class="btn btn-primary" ng-click="panVideo( 'left')"><span class="glyphicon glyphicon-chevron-left"></span></button>
+                </div>
+                <div class="col-xs-offset-1 col-xs-1">
+                    <button type="button" class="btn btn-primary" ng-click="panVideo( 'right')"><span class="glyphicon glyphicon-chevron-right"></span></button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-offset-2 col-xs-1">
+                    <button type="button" class="btn btn-primary" ng-click="panVideo( 'down')"><span class="glyphicon glyphicon-chevron-down"></span></button>
+                </div>
+            </div>
+        </div>
+    </div>
