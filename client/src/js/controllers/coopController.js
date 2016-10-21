@@ -54,19 +54,24 @@ angular.module(appName)
                             $scope.nextOpMessage = 'Opening in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
                         } else {
                             $scope.doorHealth = $scope.doorStates.danger;
+                            $scope.nextOpMessage = 'Door failed to open when scheduled';
                         }
                     } else if ($scope.doorState === 'open') {
                         if (currentMinutes >= openMinutes && currentMinutes <= closeMinutes) {
                             $scope.doorHealth = $scope.doorStates.ok;
-                        } else {
-                            $scope.doorHealth = $scope.doorStates.danger;
-                        }
-                        deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
-                        deltaMins = (closeMinutes - currentMinutes) % 60;
+                            deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
+                            deltaMins = (closeMinutes - currentMinutes) % 60;
 
-                        $scope.nextOpMessage = 'Closing in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
+                            $scope.nextOpMessage = 'Closing in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
+                        } else {
+                            // this is really bad!! The coop door is open and its past closing
+                            // CHICKENS MAY DIE !!!!!!
+                            $scope.doorHealth = $scope.doorStates.danger;
+                            $scope.nextOpMessage = 'Door failed to close when scheduled!!';
+                        }
                     } else {
                         $scope.doorHealth = $scope.doorStates.transitioning;
+                        $scope.nextOpMessage = 'Door is transitioning';
                     }
                 }
             };
@@ -112,6 +117,13 @@ angular.module(appName)
                     $log.error('Error getting mode, err: ', err);
                     $scope.mode = 'error';
                 });
+
+                coopService.getHealth().then(function(health) {
+                    $scope.health = health;
+                }, function(err) {
+                    $log.error('Error getting health, err: ' + err);
+                    $scope.health = 'error';
+                });
             };
 
             $scope.autoDoor = function() {
@@ -127,7 +139,7 @@ angular.module(appName)
                 $interval(function() {
                     $scope.closeActive = false;
                 }, 20000, 1);
-                coopService.commandDoor('close').then(function() {
+                return coopService.commandDoor('close').then(function() {
                     $log.debug('Door close command sent successfully.');
                 }, function(err) {
                     $log.error('Error commanding door ito close, err: ', err);
@@ -139,7 +151,7 @@ angular.module(appName)
                 $interval(function() {
                     $scope.openActive = false;
                 }, 20000, 1);
-                coopService.commandDoor('open').then(function() {
+                return coopService.commandDoor('open').then(function() {
                     $log.debug('Door open command sent successfully.');
                 }, function(err) {
                     $log.error('Error commanding door ito open, err: ', err);
@@ -151,7 +163,7 @@ angular.module(appName)
                 $interval(function() {
                     $scope.resetActive = false;
                 }, 20000, 1);
-                coopService.reset().then(function() {
+                return coopService.reset().then(function() {
                     update();
                 }, function(err) {
                     $log.error('Error resetting coop, err: ', err);
@@ -159,24 +171,15 @@ angular.module(appName)
             };
 
             $scope.panVideo = function(dir) {
-                videoService.pan(dir);
+                return videoService.pan(dir);
             };
 
             $scope.goToVideoPreset = function(preset) {
-                videoService.goToPreset(preset);
+                return videoService.goToPreset(preset);
             };
 
             $scope.setIR = function(ir) {
-                videoService.setIR(ir);
-            };
-
-            var getHealth = function() {
-                coopService.getHealth().then(function(health) {
-                    $scope.health = health;
-                }, function(err) {
-                    $log.error('Error getting health, err: ' + err);
-                    $scope.health = 'error';
-                });
+                return videoService.setIR(ir);
             };
 
             var displayTime = function(time) {
@@ -203,7 +206,5 @@ angular.module(appName)
 
             update();
             $interval(update, 5000);
-
-            getHealth();
         }
     ]);

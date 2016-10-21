@@ -29,8 +29,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-        'client/src/views/*.html': ['ng-html2js'],
-        'client/src/**/*.js': ['coverage']
+        'client/src/views/*.html': ['ng-html2js']
     },
     
     ngHtml2JsPreprocessor: { 
@@ -41,17 +40,10 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['mocha', 'progress', 'coverage'],
+    reporters: ['mocha', 'progress'],
 
     mochaReporter: {
         output: 'autowatch' 
-    },
-
-    coverageReporter: {
-      type : 'html',
-      include: 'client/src/**/*.js',
-      dir : 'coverage/',
-      includeAllSources: true
     },
 
     // web server port

@@ -110,7 +110,7 @@ describe('coopDirective test', function() {
 
     });
 
-    it('clicking close button should request controller to close', function(done) {
+    it('clicking open button should request controller to open', function(done) {
         var testDoorState = 'closed';
         $scope.mode = 'auto';
         $scope.doorState = testDoorState;

@@ -14,7 +14,7 @@ angular.module(appName)
             });
         };
 
-        var reset = function(callback) {
+        var reset = function() {
             return $http.put(baseUrl + '/reset', {}).then(function(response) {
                 return response.data;
             });
