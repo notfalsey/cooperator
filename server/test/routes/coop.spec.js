@@ -33,23 +33,23 @@ describe('routes/coop', () => {
         // tear down for test suite
     });
 
+    function testGet(uri, backendMethod, backendStatus, expectedString) {
+        var readDoorStub = sinon.stub();
+        readDoorStub.returns(backendStatus);
+        mockCoopController[backendMethod] = readDoorStub;
+
+        return request(app)
+            .get(baseUri + uri)
+            .set('Accept', 'application/json')
+            .expect(200)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+                assert.equal(response.body, expectedString);
+                assert(readDoorStub.called);
+            });
+    }
+
     describe('/door', () => {
-        function testGet(uri, backendMethod, backendStatus, expectedString) {
-            var readDoorStub = sinon.stub();
-            readDoorStub.returns(backendStatus);
-            mockCoopController[backendMethod] = readDoorStub;
-
-            return request(app)
-                .get(baseUri + uri)
-                .set('Accept', 'application/json')
-                .expect(200)
-                .expect('Content-Type', /json/)
-                .then((response) => {
-                    assert.equal(response.body, expectedString);
-                    assert(readDoorStub.called);
-                });
-        }
-
         it('get /door should return correct door status', () => {
             var expects = [{
                 value: 0,
@@ -76,84 +76,6 @@ describe('routes/coop', () => {
             });
         });
 
-        it('get /mode should return correct mode status', () => {
-            var expects = [{
-                value: 0,
-                string: 'auto'
-            }, {
-                value: 1,
-                string: 'manual'
-            }, {
-                value: -1,
-                string: 'auto'
-            }, {
-                value: 'junk',
-                string: 'auto'
-            }];
-
-            return Promise.mapSeries(expects, (expect) => {
-                return testGet('/mode', 'readMode', expect.value, expect.string);
-            });
-        });
-
-        it('get /light should return correct light values', () => {
-            var expects = [{
-                value: 0,
-                expect: 0
-            }, {
-                value: 100,
-                expect: 100
-            }, {
-                value: 7000,
-                expect: 7000
-            }, {
-                value: -80,
-                expect: -80
-            }];
-
-            return Promise.mapSeries(expects, (expect) => {
-                return testGet('/light', 'readLight', expect.value, expect.expect);
-            });
-        });
-
-        it('get /temp should return correct temp values', () => {
-            var expects = [{
-                value: 0,
-                expect: 0
-            }, {
-                value: 100,
-                expect: 100
-            }, {
-                value: 7000,
-                expect: 7000
-            }, {
-                value: -80,
-                expect: -80
-            }];
-
-            return Promise.mapSeries(expects, (expect) => {
-                return testGet('/temp', 'readTemp', expect.value, expect.expect);
-            });
-        });
-
-        it('get /uptime should return correct uptime values', () => {
-            var currentTime = new Date().getTime();
-            var expects = [{
-                value: 0,
-                expect: 0
-            }, {
-                value: 1000000,
-                expect: 1000000
-            }, {
-                value: currentTime,
-                expect: currentTime
-            }];
-
-            return Promise.mapSeries(expects, (expect) => {
-                return testGet('/uptime', 'readUptime', expect.value, expect.expect);
-            });
-        });
-
         it('put /door should open door when requested', () => {
             var openDoorStub = sinon.stub();
             openDoorStub.callsArg(0);
@@ -168,6 +90,7 @@ describe('routes/coop', () => {
                 .expect('Content-Type', /json/)
                 .then((response) => {
                     assert.equal(response.body, 'Door is opening');
+                    assert(openDoorStub.called);
                 });
         });
 
@@ -185,6 +108,7 @@ describe('routes/coop', () => {
                 .expect('Content-Type', /json/)
                 .then((response) => {
                     assert.equal(response.body, 'Error opening door');
+                    assert(openDoorStub.called);
                 });
         });
 
@@ -216,6 +140,7 @@ describe('routes/coop', () => {
                 .expect('Content-Type', /json/)
                 .then((response) => {
                     assert.equal(response.body, 'Door is closing');
+                    assert(closeDoorStub.called);
                 });
         });
 
@@ -233,6 +158,7 @@ describe('routes/coop', () => {
                 .expect('Content-Type', /json/)
                 .then((response) => {
                     assert.equal(response.body, 'Error closing door');
+                    assert(closeDoorStub.called);
                 });
         });
 
@@ -250,6 +176,7 @@ describe('routes/coop', () => {
                 .expect('Content-Type', /json/)
                 .then((response) => {
                     assert.equal(response.body, 'Door is in auto mode');
+                    assert(autoDoorStub.called);
                 });
         });
 
@@ -267,7 +194,95 @@ describe('routes/coop', () => {
                 .expect('Content-Type', /json/)
                 .then((response) => {
                     assert.equal(response.body, 'Error setting door to auto mode');
+                    assert(autoDoorStub.called);
                 });
         });
     });
+
+    describe('/mode', () => {
+        it('get /mode should return correct mode status', () => {
+            var expects = [{
+                value: 0,
+                string: 'auto'
+            }, {
+                value: 1,
+                string: 'manual'
+            }, {
+                value: -1,
+                string: 'auto'
+            }, {
+                value: 'junk',
+                string: 'auto'
+            }];
+
+            return Promise.mapSeries(expects, (expect) => {
+                return testGet('/mode', 'readMode', expect.value, expect.string);
+            });
+        });
+    });
+
+    describe('/light', () => {
+        it('get /light should return correct light values', () => {
+            var expects = [{
+                value: 0,
+                expect: 0
+            }, {
+                value: 100,
+                expect: 100
+            }, {
+                value: 7000,
+                expect: 7000
+            }, {
+                value: -80,
+                expect: -80
+            }];
+
+            return Promise.mapSeries(expects, (expect) => {
+                return testGet('/light', 'readLight', expect.value, expect.expect);
+            });
+        });
+    });
+
+    describe('/temp', () => {
+        it('get /temp should return correct temp values', () => {
+            var expects = [{
+                value: 0,
+                expect: 0
+            }, {
+                value: 100,
+                expect: 100
+            }, {
+                value: 7000,
+                expect: 7000
+            }, {
+                value: -80,
+                expect: -80
+            }];
+
+            return Promise.mapSeries(expects, (expect) => {
+                return testGet('/temp', 'readTemp', expect.value, expect.expect);
+            });
+        });
+    });
+
+    describe('/uptime', () => {
+        it('get /uptime should return correct uptime values', () => {
+            var currentTime = new Date().getTime();
+            var expects = [{
+                value: 0,
+                expect: 0
+            }, {
+                value: 1000000,
+                expect: 1000000
+            }, {
+                value: currentTime,
+                expect: currentTime
+            }];
+
+            return Promise.mapSeries(expects, (expect) => {
+                return testGet('/uptime', 'readUptime', expect.value, expect.expect);
+            });
+        });
+    });
+
 });

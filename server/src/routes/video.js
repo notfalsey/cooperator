@@ -1,10 +1,8 @@
 'use strict';
 
-var VideoService = require('../VideoService.js'),
-    log = require('../logger.js')();
+var log = require('../logger.js')();
 
-function setup(app, url, config) {
-    var videoService = new VideoService(config);
+function setup(app, url, videoService) {
 
     app.get(url, function(req, res) {
         log.trace('Entering get ' + url);

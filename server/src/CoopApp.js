@@ -8,6 +8,8 @@ var bodyParser = require('body-parser'),
     https = require('https'),
     props = require('./Properties.js'),
     CoopController = require('./CoopController.js'),
+    NotifyService = require('./NotifyService.js'),
+    VideoService = require('./VideoService.js'),
     WeatherService = require('./WeatherService.js'),
     passport = require('passport'),
     session = require('express-session'),
@@ -129,9 +131,10 @@ function configure(app, config) {
     app.use(express.static(props.getStaticFilesDir()));
 
     var weatherService = new WeatherService(config);
-    var coopController = new CoopController(config, weatherService);
+    var notifyService = NotifyService(config);
+    var coopController = new CoopController(config, weatherService, notifyService);
     require('./routes/coop.js')(app, '/coop', coopController);
-    require('./routes/video.js')(app, '/video', config);
+    require('./routes/video.js')(app, '/video', new VideoService(config));
     require('./routes/weather.js')(app, '/weather', weatherService);
 }
 

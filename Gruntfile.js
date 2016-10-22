@@ -62,7 +62,7 @@ module.exports = function(grunt) {
             bower: "bower install"
         },
         mocha_istanbul: {
-            coverage: {
+            server: {
                 src: 'server/test/**/*',
                 options: {
                     mask: '*.spec.js',
@@ -79,7 +79,8 @@ module.exports = function(grunt) {
     });
 
 
-
-    grunt.registerTask('default', ['exec:bower', 'jshint', 'jsbeautifier:check', 'karma:dev', 'mocha_istanbul:coverage']);
+    grunt.registerTask('serverTest', 'mocha_istanbul:server');
+    grunt.registerTask('clientTest', 'karma:dev');
+    grunt.registerTask('default', ['exec:bower', 'jshint', 'jsbeautifier:check', 'karma:dev', 'mocha_istanbul:server']);
     grunt.registerTask('bfy', ['jsbeautifier:beautify']);
 };

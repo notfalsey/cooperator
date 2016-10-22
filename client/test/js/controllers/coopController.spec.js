@@ -5,14 +5,14 @@ describe('coopController test', function() {
     var ctrlName = 'coopController';
 
 
-     var testDoorStates = {
+    var testDoorStates = {
         danger: 'danger',
         ok: 'ok',
         transitioning: 'transitioning',
         error: 'error',
         unknown: 'unknown'
     };
-    
+
     beforeEach(function() {
         module(moduleName);
     });
@@ -104,8 +104,8 @@ describe('coopController test', function() {
             assert.equal(command, 'close');
             return $q.when('');
         });
-        
-        assert.equal($scope.closeActive, false, 'close should not be active before requesting it'); 
+
+        assert.equal($scope.closeActive, false, 'close should not be active before requesting it');
         $scope.closeDoor();
         // must call digest to flush $q promises
         $rootScope.$digest();
@@ -133,8 +133,8 @@ describe('coopController test', function() {
             assert.equal(command, 'open');
             return $q.when('');
         });
-        
-        assert.equal($scope.openActive, false, 'open should not be active before requesting it'); 
+
+        assert.equal($scope.openActive, false, 'open should not be active before requesting it');
         $scope.openDoor();
         // must call digest to flush $q promises
         $rootScope.$digest();
@@ -161,8 +161,8 @@ describe('coopController test', function() {
         sinon.stub(coopService, 'reset', function() {
             return $q.when('');
         });
-        
-        assert.equal($scope.resetActive, false, 'reset should not be active before requesting it'); 
+
+        assert.equal($scope.resetActive, false, 'reset should not be active before requesting it');
         $scope.reset();
         // must call digest to flush $q promises
         $rootScope.$digest();
@@ -275,9 +275,9 @@ describe('coopController test', function() {
         sinon.stub(coopService, 'getHealth', function() {
             return $q.reject('Error');
         });
-        
+
         $interval.flush(6000);
-        
+
         assert.equal($scope.closeTime, 'error');
         assert.equal($scope.openTime, 'error');
         assert.equal($scope.doorState, 'error');

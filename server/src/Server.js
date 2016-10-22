@@ -3,9 +3,15 @@
 var async = require('async'),
     CertificateManager = require('./CertificateManager.js'),
     CoopApp = require('./CoopApp.js'),
+    Promise = require('bluebird'),
     props = require('./Properties.js'),
     fs = require('fs-extra'),
     log = require('./logger.js')();
+
+// to prevent unhandled rejecttions from hiding
+Promise.onPossiblyUnhandledRejection(function(error) {
+    throw error;
+});
 
 // add an uncaught exception handler that allows us to log the final bits and anything else before the ship sinks
 process.on('uncaughtException', function(err) {

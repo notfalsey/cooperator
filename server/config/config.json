@@ -30,7 +30,7 @@
     "googleOauthClientSecret": "?",
     "googleCallbackUrl": "?",
     "allowedUsers": [],
-    "enableMailNotify": true,
+    "enableNotify": true,
     "mailRecipients": [],
     "mailFrom": "?",
     "mailDomain": "?",
