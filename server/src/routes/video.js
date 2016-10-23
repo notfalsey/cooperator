@@ -13,12 +13,11 @@ function setup(app, url, videoService) {
         log.trace({
             dir: req.body.dir
         }, 'Entering put ' + url + '/pan');
-        videoService.pan(req.body.dir, function(err, status) {
-            if (err) {
-                res.status(500);
-            } else {
-                res.status(status);
-            }
+        videoService.pan(req.body.dir).then((status) => {
+            res.status(status);
+            res.end();
+        }).catch((err) => {
+            res.status(500);
             res.end();
         });
     });
@@ -27,12 +26,11 @@ function setup(app, url, videoService) {
         log.trace({
             ir: req.body.ir
         }, 'Entering put ' + url + '/ir');
-        videoService.setIR(req.body.ir, function(err, status) {
-            if (err) {
-                res.status(500);
-            } else {
-                res.status(status);
-            }
+        videoService.setIR(req.body.ir).then((status) => {
+            res.status(status);
+            res.end();
+        }).catch((err) => {
+            res.status(500);
             res.end();
         });
     });
@@ -41,12 +39,11 @@ function setup(app, url, videoService) {
         log.trace({
             preset: req.body.preset
         }, 'Entering put ' + url + '/preset');
-        videoService.goToPreset(req.body.preset, function(err, status) {
-            if (err) {
-                res.status(500);
-            } else {
-                res.status(status);
-            }
+        videoService.goToPreset(req.body.preset).then((status) => {
+            res.status(status);
+            res.end();
+        }).catch((err) => {
+            res.status(500);
             res.end();
         });
     });

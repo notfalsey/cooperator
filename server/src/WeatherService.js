@@ -19,9 +19,6 @@ class WeatherService {
         this.errorCount = 0;
         // default refresh every 12 hours
         var refreshPeriod = 12 * 60 * 60 * 1000;
-        if (config.astronomyUpdatePeriod) {
-            refreshPeriod = config.astronomyUpdatePeriod;
-        }
 
         setInterval(this.refresh.bind(this), refreshPeriod);
     }
@@ -42,14 +39,14 @@ class WeatherService {
     getData(url) {
         var resData = '';
         return new Promise((resolve, reject) => {
-            var req = http.get(url, function(res) {
+            var req = http.get(url, (res) => {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
                     var resData = '';
                     res.on('data', function(data) {
                         resData += data;
                     });
 
-                    res.on('end', function() {
+                    res.on('end', () => {
                         log.debug({
                             resData: resData
                         }, 'Received data from weather service');
@@ -60,7 +57,7 @@ class WeatherService {
                         }
                     });
 
-                    res.on('error', function(err) {
+                    res.on('error', (err) => {
                         var msg = 'Error fetching data from weather service';
                         log.error({
                             err: err
@@ -71,7 +68,7 @@ class WeatherService {
                     reject(new Error('Unexpected response status: ' + res.statusCode));
                 }
             });
-            req.on('error', function(err) {
+            req.on('error', (err) => {
                 var msg = 'Error fetching data from weather service';
                 log.error({
                     err: err

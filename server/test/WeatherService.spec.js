@@ -24,11 +24,12 @@ describe('WeatherService', () => {
         var getDataSpy = sinon.spy(WeatherService.prototype, 'getData');
         var weatherService = new WeatherService(config);
 
-        this.clock.tick(2);
+        this.clock.tick(12 * 60 * 60 * 1000 + 1);
         // once immediately, and once per clock tick after that since the refresh 
         // perios was configured to be one ms (clock tick) 
-        assert(refreshSpy.callCount, 3);
-        assert(getDataSpy.callCount, 3);
+
+        assert.equal(refreshSpy.callCount, 2);
+        assert.equal(getDataSpy.callCount, 2);
     });
 
     it('should make reqeusts for the configured location', () => {
