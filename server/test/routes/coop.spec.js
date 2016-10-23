@@ -33,10 +33,10 @@ describe('routes/coop', () => {
         // tear down for test suite
     });
 
-    function testGet(uri, backendMethod, backendStatus, expectedString) {
-        var readDoorStub = sinon.stub();
-        readDoorStub.returns(backendStatus);
-        mockCoopController[backendMethod] = readDoorStub;
+    function testGet(uri, backendMethod, backendStatus, expected) {
+        var methodStub = sinon.stub();
+        methodStub.returns(backendStatus);
+        mockCoopController[backendMethod] = methodStub;
 
         return request(app)
             .get(baseUri + uri)
@@ -44,8 +44,8 @@ describe('routes/coop', () => {
             .expect(200)
             .expect('Content-Type', /json/)
             .then((response) => {
-                assert.equal(response.body, expectedString);
-                assert(readDoorStub.called);
+                assert.deepEqual(response.body, expected);
+                assert(methodStub.called);
             });
     }
 
@@ -199,6 +199,35 @@ describe('routes/coop', () => {
         });
     });
 
+    describe('/reset', () => {
+        it('put /reset should send reset command to coop', () => {
+            var resetStub = sinon.stub();
+            resetStub.callsArg(0);
+            mockCoopController.reset = resetStub;
+            return request(app)
+                .put(baseUri + '/reset')
+                .set('Accept', 'application/json')
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                    assert(resetStub.called);
+                });
+        });
+
+        it('put /reset should handle error', () => {
+            var resetStub = sinon.stub();
+            resetStub.callsArgWith(0, new Error('failed'));
+            mockCoopController.reset = resetStub;
+            return request(app)
+                .put(baseUri + '/reset')
+                .set('Accept', 'application/json')
+                .expect(500)
+                .then((response) => {
+                    assert(resetStub.called);
+                });
+        });
+    });
+
     describe('/mode', () => {
         it('get /mode should return correct mode status', () => {
             var expects = [{
@@ -285,4 +314,100 @@ describe('routes/coop', () => {
         });
     });
 
+    describe('/closetime', () => {
+        it('get /closetime should return correct closetime values', () => {
+            var currentTime = new Date().getTime();
+            var expects = [{
+                value: 0,
+                expect: {
+                    hour: 0,
+                    minute: 0
+                }
+            }, {
+                value: 18 * 60 + 30,
+                expect: {
+                    hour: 18,
+                    minute: 30
+                }
+            }, {
+                value: 23 * 60 + 3,
+                expect: {
+                    hour: 23,
+                    minute: 3
+                }
+            }];
+
+            return Promise.mapSeries(expects, (expect) => {
+                return testGet('/closetime', 'getClosingTime', expect.value, expect.expect);
+            });
+        });
+    });
+
+    describe('/opentime', () => {
+        it('get /opentime should return correct opentime values', () => {
+            var currentTime = new Date().getTime();
+            var expects = [{
+                value: 0,
+                expect: {
+                    hour: 0,
+                    minute: 0
+                }
+            }, {
+                value: 6 * 60 + 30,
+                expect: {
+                    hour: 6,
+                    minute: 30
+                }
+            }, {
+                value: 5 * 60 + 3,
+                expect: {
+                    hour: 5,
+                    minute: 3
+                }
+            }];
+
+            return Promise.mapSeries(expects, (expect) => {
+                return testGet('/opentime', 'getOpeningTime', expect.value, expect.expect);
+            });
+        });
+    });
+
+    describe('/health', () => {
+        it('get /health should return correct health values', () => {
+            var testValue = 123;
+            var valueStub = sinon.stub();
+            valueStub.returns(123);
+            mockCoopController.getReadErrorCount = valueStub;
+            mockCoopController.getWriteErrorCount = valueStub;
+            mockCoopController.getAutoResetCount = valueStub;
+            var testTime = new Date();
+            var timeStub = sinon.stub();
+            timeStub.returns(testTime);
+            mockCoopController.getLastError = timeStub;
+            mockCoopController.getLastSuccessfulRead = timeStub;
+            mockCoopController.getLastSuccessfulWrite = timeStub;
+            mockCoopController.getLongestUptime = timeStub;
+
+            var expectedResponse = {
+                readErrors: testValue,
+                writeErrors: testValue,
+                autoResets: testValue,
+                lastError: testTime.toString(),
+                lastRead: testTime.toString(),
+                lastWrite: testTime.toString(),
+                longestUptime: testTime.toString()
+            };
+
+            return request(app)
+                .get(baseUri + '/health')
+                .set('Accept', 'application/json')
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                    assert.deepEqual(response.body, expectedResponse);
+                    assert.equal(valueStub.callCount, 3);
+                    assert.equal(timeStub.callCount, 4);
+                });
+        });
+    });
 });

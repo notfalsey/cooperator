@@ -53,27 +53,24 @@ function setup(app, url, controller) {
         res.end();
     });
 
+    function getHourMin(minutes) {
+        return {
+            hour: Math.floor(minutes / 60),
+            minute: minutes % 60
+        };
+    }
+
     app.get(url + '/closetime', function(req, res) {
         log.trace('Entering get ' + url + '/closetime');
         var closingMinutes = controller.getClosingTime();
-        var hour = Math.floor(closingMinutes / 60);
-        var minute = closingMinutes % 60;
-        res.status(200).json({
-            hour: hour,
-            minute: minute
-        });
+        res.status(200).json(getHourMin(closingMinutes));
         res.end();
     });
 
     app.get(url + '/opentime', function(req, res) {
         log.trace('Entering get ' + url + '/opentime');
         var openingMinutes = controller.getOpeningTime();
-        var hour = Math.floor(openingMinutes / 60);
-        var minute = openingMinutes % 60;
-        res.status(200).json({
-            hour: hour,
-            minute: minute
-        });
+        res.status(200).json(getHourMin(openingMinutes));
         res.end();
     });
 
@@ -83,10 +80,10 @@ function setup(app, url, controller) {
         health.readErrors = controller.getReadErrorCount();
         health.writeErrors = controller.getWriteErrorCount();
         health.autoResets = controller.getAutoResetCount();
-        health.lastError = controller.getLastError();
-        health.lastRead = controller.getLastSuccessfulRead();
-        health.lastWrite = controller.getLastSuccessfulWrite();
-        health.longestUptime = controller.getLongestUptime();
+        health.lastError = controller.getLastError().toString();
+        health.lastRead = controller.getLastSuccessfulRead().toString();
+        health.lastWrite = controller.getLastSuccessfulWrite().toString();
+        health.longestUptime = controller.getLongestUptime().toString();
         res.status(200).json(health);
         res.end();
     });

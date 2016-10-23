@@ -121,4 +121,14 @@ describe('routes/video', () => {
                 assert(presetStub.called);
             });
     });
+
+    it('get / should make get request to video service', () => {
+        videoService.get = function(res) {
+            res.status(200);
+            res.end();
+        };
+        return request(app)
+            .get(baseUri)
+            .expect(200);
+    });
 });
