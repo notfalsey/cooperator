@@ -12,7 +12,7 @@ function NotifyService(config) {
 }
 
 NotifyService.prototype = {
-    notify: function(subject, message, callback) {
+    notify: function(subject, message) {
         var data = {
             from: this.from,
             to: this.recipients,
@@ -23,22 +23,7 @@ NotifyService.prototype = {
             subject: subject,
             message: message
         }, 'Sending email notification');
-        this.mailgun.messages().send(data, function(err, body) {
-            if (err) {
-                log.error({
-                    err: err,
-                    body: body
-                }, 'Error sending email notification');
-            } else {
-                log.trace({
-                    body: body,
-                    subject: subject
-                }, 'Sent email notification');
-            }
-            if (callback) {
-                callback(err);
-            }
-        });
+        return this.mailgun.messages().send(data);
     }
 };
 
