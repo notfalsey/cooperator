@@ -1,20 +1,19 @@
 'use strict';
 
-var async = require('async'),
-    CertificateManager = require('./CertificateManager.js'),
+var CertificateManager = require('./CertificateManager.js'),
     CoopApp = require('./CoopApp.js'),
     Promise = require('bluebird'),
     props = require('./Properties.js'),
-    fs = require('fs-extra'),
+    fs = Promise.promisifyAll(require('fs-extra')),
     log = require('./logger.js')();
 
 // to prevent unhandled rejecttions from hiding
-Promise.onPossiblyUnhandledRejection(function(error) {
+Promise.onPossiblyUnhandledRejection((error) => {
     throw error;
 });
 
 // add an uncaught exception handler that allows us to log the final bits and anything else before the ship sinks
-process.on('uncaughtException', function(err) {
+process.on('uncaughtException', (err) => {
     //process.removeListener('uncaughtException', arguments.callee);
 
     // log the exception
@@ -43,58 +42,52 @@ log.info('===================================');
 log.info(msg);
 console.warn(msg);
 
-async.series([
-    function(callback) {
-        log.info('Reading config...');
-        fs.readJSON(props.getConfigJson(), function(err, data) {
-            if (err) {
-                var msg = 'Error reading config file: ' + props.getConfigJson();
-                console.error(msg);
-                log.error(msg);
-                callback(new Error(msg));
-            } else {
-                log.trace({
-                    config: data
-                }, 'Read configuration');
-                config = data;
-                callback();
-            }
-        });
-    },
-    function(callback) {
-        log.info('Verifying certs...');
-        var certMgr = new CertificateManager();
-        certMgr.verifyCertsDir(function(err) {
-            if (err) {
-                log.error({
-                    err: err
-                }, 'Error verifying certs dir');
-                callback(err);
-            } else {
-                log.trace('Verified certs dir');
-                certMgr.isKeyPairInstalled(function(installed) {
+log.info('Reading config...');
+fs.readJSONAsync(props.getConfigJson()).then((data) => {
+    log.trace({
+        config: data
+    }, 'Read configuration');
+    config = data;
+}).then(() => {
+    log.info('Verifying certs...');
+    var certMgr = new CertificateManager();
+    certMgr.verifyCertsDir((err) => {
+        if (err) {
+            log.error({
+                err: err
+            }, 'Error verifying certs dir');
+            return Promise.reject(err);
+        } else {
+            log.trace('Verified certs dir');
+            return new Promise((resolve, reject) => {
+                certMgr.isKeyPairInstalled((installed) => {
                     if (!installed) {
                         log.trace('Keypair is not installed, generating...');
-                        certMgr.generateKeyPair('localhost', props.getHttpCertPath(), props.getHttpKeyPath(), callback);
+                        certMgr.generateKeyPair('localhost', props.getHttpCertPath(), props.getHttpKeyPath(), (err) => {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                resolve();
+                            }
+                        });
                     } else {
                         log.trace('Keypair is installed');
-                        callback();
+                        return resolve();
                     }
                 });
-            }
-        });
-    },
-    function(callback) {
-        log.trace('Constructing coop app');
-        var app = new CoopApp();
-        log.trace('Starting coop app');
-        app.start(props.getHttpKeyPath(), props.getHttpCertPath(), callback);
-    }
-], function(err, results) {
-    if (err) {
-        log.error({
-            err: err
-        }, 'Error starting app');
-        console.error('Error: ' + err);
-    }
+            });
+        }
+    });
+}).then(() => {
+    log.trace('Constructing coop app');
+    var config = fs.readJsonSync(props.getConfigJson());
+    var app = new CoopApp(config);
+    log.trace('Starting coop app');
+    return app.start(props.getHttpKeyPath(), props.getHttpCertPath());
+}).catch((err) => {
+    log.error({
+        err: err
+    }, 'Error starting app');
+    console.error('Error: ' + err);
+    process.exit(1);
 });

@@ -88,9 +88,7 @@ class CoopController {
                 .then(() => {
                     this.lastSuccessfulWrite = new Date();
                     return new Promise((resolve, reject) => {
-                        setTimeout(function() {
-                            resolve();
-                        }, 100);
+                        setTimeout(resolve, 100);
                     });
                 })
                 .then(() => {
@@ -155,67 +153,58 @@ class CoopController {
                 return true;
             },
             (callback) => {
-                async.series([
-                    (callback) => {
-                        log.trace({
-                            commandLength: this.commandQueue.length
-                        }, 'Servicing queued commands');
-                        var commandsToService = this.commandQueue;
-                        this.commandQueue = [];
-                        async.eachSeries(commandsToService, (command, callback) => {
-                            log.trace({
-                                command: command
-                            }, 'Sending command');
-                            this.sendCommand(wire, command.command, command.args).then((data) => {
-                                if (command.command === this.commands.reset) {
-                                    this.state.uptime = -1;
-                                }
-                                command.resolve(data);
-                                // always keep going even if error
-                                setTimeout(callback, delayBetween);
-                            }).catch((err) => {
-                                log.error({
-                                    err: err
-                                }, 'Error sending command');
-                                command.reject(err);
-                                // always keep going even if error
-                                setTimeout(callback, delayBetween);
-                            });
-                        }, (err, results) => {
-                            if (err) {
-                                log.error({
-                                    err: err
-                                }, 'Error servicing queued commands');
-                            }
-                            // always keep going even if error
-                            callback(null);
+                log.trace({
+                    commandLength: this.commandQueue.length
+                }, 'Servicing queued commands');
+                var commandsToService = this.commandQueue;
+                this.commandQueue = [];
+
+                async.eachSeries(commandsToService, (command, callback) => {
+                    log.trace({
+                        command: command
+                    }, 'Sending command');
+                    this.sendCommand(wire, command.command, command.args).then((data) => {
+                        if (command.command === this.commands.reset) {
+                            this.state.uptime = -1;
+                        }
+                        command.resolve(data);
+                        // always keep going even if error
+                        setTimeout(callback, delayBetween);
+                    }).catch((err) => {
+                        log.error({
+                            err: err
+                        }, 'Error sending command');
+                        command.reject(err);
+                        // always keep going even if error
+                        setTimeout(callback, delayBetween);
+                    });
+                }, (err) => {
+                    // always keep going even if error
+                    log.trace('Reading uptime');
+                    this.sendCommand(wire, this.commands.readUptime, []).then((uptime) => {
+                        if (uptime > this.longestUptime) {
+                            this.longestUptime = uptime;
+                        }
+                        if (uptime < this.state.uptime && this.state.uptime < (Math.pow(2, 32) - 10000)) {
+                            this.autoResetCount++;
+                            log.error({
+                                uptime: uptime,
+                                lastUptime: this.state.uptime
+                            }, 'Coop controller reset');
+                        }
+                        this.state.uptime = uptime;
+                        return new Promise((resolve, reject) => {
+                            setTimeout(resolve, delayBetween);
                         });
-                    },
-                    // read uptime before other state so we know if the coop was recently reset before reading others
-                    (callback) => {
-                        log.trace('Reading uptime');
-                        this.sendCommand(wire, this.commands.readUptime, []).then((uptime) => {
-                            if (uptime > this.longestUptime) {
-                                this.longestUptime = uptime;
-                            }
-                            if (uptime < this.state.uptime && this.state.uptime < (Math.pow(2, 32) - 10000)) {
-                                this.autoResetCount++;
-                                log.error({
-                                    uptime: uptime,
-                                    lastUptime: this.state.uptime
-                                }, 'Coop controller reset');
-                            }
-                            this.state.uptime = uptime;
-                            setTimeout(callback, delayBetween);
-                        }).catch((err) => {
-                            log.error('Error reading uptime');
-                            // always keep going even if error
-                            setTimeout(callback, delayBetween);
+                    }).catch((err) => {
+                        log.error('Error reading uptime');
+                        // always keep going even if error
+                        return new Promise((resolve, reject) => {
+                            setTimeout(resolve, delayBetween);
                         });
-                    },
-                    (callback) => {
+                    }).then(() => {
                         log.trace('Reading door state');
-                        this.sendCommand(wire, this.commands.readDoor, []).then((door) => {
+                        return this.sendCommand(wire, this.commands.readDoor, []).then((door) => {
                             // first lets compare current state against previous state and send a notification of state change if necessary
                             if (this.enableNotify === true && this.lastNonErrorDoorState === this.doorStates.transitioning) {
                                 if (door === this.doorStates.open) {
@@ -241,73 +230,77 @@ class CoopController {
                                 }
                             }
                             this.lastNonErrorDoorState = this.state.door = door;
-                            setTimeout(callback, delayBetween);
+                            return new Promise((resolve, reject) => {
+                                setTimeout(resolve, delayBetween);
+                            });
                         }).catch((err) => {
                             log.error('Error reading door');
                             this.state.door = -1;
                             // always keep going even if error
-                            setTimeout(callback, delayBetween);
+                            return new Promise((resolve, reject) => {
+                                setTimeout(resolve, delayBetween);
+                            });
                         });
-                    },
-                    (callback) => {
+                    }).then(() => {
                         log.trace('Reading override mode');
-                        this.sendCommand(wire, this.commands.readMode, []).then((mode) => {
+                        return this.sendCommand(wire, this.commands.readMode, []).then((mode) => {
                             this.state.mode = mode;
-                            setTimeout(callback, delayBetween);
+                            return new Promise((resolve, reject) => {
+                                setTimeout(resolve, delayBetween);
+                            });
                         }).catch((err) => {
                             log.error('Error reading override mode');
                             this.state.mode = -1;
                             // always keep going even if error
-                            setTimeout(callback, delayBetween);
+                            return new Promise((resolve, reject) => {
+                                setTimeout(resolve, delayBetween);
+                            });
                         });
-                    },
-                    /*(callback) => {
-                        log.trace('Reading light');
-                        this.sendCommand(wire, this.commands.readLight, [], (err, light) => {
-                            if (err) {
-                                log.error('Error reading light');
-                                this.state.light = -1;
-                            } else {
-                                this.state.light = light;
-                            }
-                            // always keep going even if error
-                            setTimeout(callback, delayBetween);
-                        });
-                    },
-                    (callback) => {
-                    	log.trace('Updating temperature');
-                    	this.sendCommand(wire, this.commands.readTemp, [], function(err, temp) {
-                    		if(err) {
-                    			log.error('Error reading temp');
-                    		} else {
-                    			this.state.temp = temp;
-                    		}
-                    		// always keep going even if error
-                    		setTimeout(callback, delayBetween);
-                    	});	
-                    },*/
-                    (callback) => {
+                        /*
+                        (callback) => {
+                            log.trace('Reading light');
+                            this.sendCommand(wire, this.commands.readLight, [], (err, light) => {
+                                if (err) {
+                                    log.error('Error reading light');
+                                    this.state.light = -1;
+                                } else {
+                                    this.state.light = light;
+                                }
+                                // always keep going even if error
+                                setTimeout(callback, delayBetween);
+                            });
+                        },
+                        (callback) => {
+                            log.trace('Updating temperature');
+                            this.sendCommand(wire, this.commands.readTemp, [], function(err, temp) {
+                                if(err) {
+                                    log.error('Error reading temp');
+                                } else {
+                                    this.state.temp = temp;
+                                }
+                                // always keep going even if error
+                                setTimeout(callback, delayBetween);
+                            }); 
+                        },*/
+                    }).then(() => {
                         log.trace('checking door');
                         this.checkDoor(wire, this.state.door).then(() => {
-                            setTimeout(callback, delayBetween);
+                            return new Promise((resolve, reject) => {
+                                setTimeout(resolve, delayBetween);
+                            });
                         }).catch((err) => {
                             log.error('Error checking door');
                             // always keep going even if error
-                            setTimeout(callback, delayBetween);
+                            return new Promise((resolve, reject) => {
+                                setTimeout(resolve, delayBetween);
+                            });
                         });
-                    }
-                ], (err) => {
-                    if (err) {
-                        log.error({
-                            err: err
-                        }, 'Error in sync');
-                    } else {
-                        log.trace('sync succeeded');
-                    }
+                    });
+                    log.trace({
+                        err: err
+                    }, 'sync finished');
                     // always keep going even if error
                     setTimeout(callback, 1000);
-                    // reset the wire on each batch of commands to keep a healthy state
-                    //wire.close();
                 });
             },
             (err) => {

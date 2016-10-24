@@ -216,7 +216,7 @@ describe('routes/coop', () => {
 
         it('put /reset should handle error', () => {
             var resetStub = sinon.stub();
-            resetStub.callsArgWith(0, new Error('failed'));
+            resetStub.rejects(new Error('failed'));
             mockCoopController.reset = resetStub;
             return request(app)
                 .put(baseUri + '/reset')

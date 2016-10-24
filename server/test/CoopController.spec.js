@@ -29,7 +29,17 @@ describe('CoopController', () => {
     };
 
     it('should initialize properly', () => {
-        var mockI2c = function() {};
+        var mockI2c = function() {
+            return {
+                writeBytes: function(command, args) {
+                    return Promise.resolve();
+                },
+                read: function(numBytes) {
+                    var response = [0, 0, 0, 0];
+                    return Promise.resolve(response);
+                }
+            };
+        };
         var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
         assert.equal(coopController.getClosingTime(), testSunset.hour * 60 + testSunset.minute + config.sunsetDeltaMinutes);
         assert.equal(coopController.getOpeningTime(), testSunrise.hour * 60 + testSunrise.minute + config.sunriseDeltaMinutes);

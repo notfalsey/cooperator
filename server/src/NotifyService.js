@@ -2,17 +2,17 @@
 
 var log = require('./logger.js')();
 
-function NotifyService(config) {
-    this.recipients = config.mailRecipients;
-    this.from = config.mailFrom;
-    this.mailgun = require('mailgun-js')({
-        apiKey: config.mailApiKey,
-        domain: config.mailDomain
-    });
-}
+class NotifyService {
+    constructor(config) {
+        this.recipients = config.mailRecipients;
+        this.from = config.mailFrom;
+        this.mailgun = require('mailgun-js')({
+            apiKey: config.mailApiKey,
+            domain: config.mailDomain
+        });
+    }
 
-NotifyService.prototype = {
-    notify: function(subject, message) {
+    notify(subject, message) {
         var data = {
             from: this.from,
             to: this.recipients,
@@ -25,6 +25,6 @@ NotifyService.prototype = {
         }, 'Sending email notification');
         return this.mailgun.messages().send(data);
     }
-};
+}
 
 module.exports = NotifyService;
