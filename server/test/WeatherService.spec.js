@@ -24,6 +24,9 @@ describe('WeatherService', () => {
         var getDataSpy = sinon.spy(WeatherService.prototype, 'getData');
         var weatherService = new WeatherService(config);
 
+        assert.equal(refreshSpy.callCount, 1);
+        assert.equal(getDataSpy.callCount, 1);
+
         this.clock.tick(12 * 60 * 60 * 1000 + 1);
         // once immediately, and once per clock tick after that since the refresh 
         // perios was configured to be one ms (clock tick) 
