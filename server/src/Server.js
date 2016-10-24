@@ -51,32 +51,19 @@ fs.readJSONAsync(props.getConfigJson()).then((data) => {
 }).then(() => {
     log.info('Verifying certs...');
     var certMgr = new CertificateManager();
-    certMgr.verifyCertsDir((err) => {
-        if (err) {
-            log.error({
-                err: err
-            }, 'Error verifying certs dir');
-            return Promise.reject(err);
-        } else {
-            log.trace('Verified certs dir');
-            return new Promise((resolve, reject) => {
-                certMgr.isKeyPairInstalled((installed) => {
-                    if (!installed) {
-                        log.trace('Keypair is not installed, generating...');
-                        certMgr.generateKeyPair('localhost', props.getHttpCertPath(), props.getHttpKeyPath(), (err) => {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve();
-                            }
-                        });
-                    } else {
-                        log.trace('Keypair is installed');
-                        return resolve();
-                    }
-                });
-            });
-        }
+    return certMgr.verifyCertsDir().then(() => {
+        log.trace('Verified certs dir');
+        return certMgr.isKeyPairInstalled().then(() => {
+            log.trace('Keypair is installed');
+        }).catch(() => {
+            log.trace('Keypair is not installed, generating...');
+            return certMgr.generateKeyPair('localhost', props.getHttpCertPath(), props.getHttpKeyPath());
+        });
+    }).catch((err) => {
+        log.error({
+            err: err
+        }, 'Error verifying certs dir');
+        throw err;
     });
 }).then(() => {
     log.trace('Constructing coop app');

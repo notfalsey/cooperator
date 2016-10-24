@@ -1,6 +1,7 @@
 'use strict';
 
-var bodyParser = require('body-parser'),
+var Promise = require('bluebird'),
+    bodyParser = require('body-parser'),
     cookieParser = require('cookie-parser'),
     express = require('express'),
     flash = require('connect-flash'),
@@ -9,7 +10,6 @@ var bodyParser = require('body-parser'),
     props = require('./Properties.js'),
     CoopController = require('./CoopController.js'),
     NotifyService = require('./NotifyService.js'),
-    Promise = require('bluebird'),
     VideoService = require('./VideoService.js'),
     WeatherService = require('./WeatherService.js'),
     passport = require('passport'),
@@ -147,6 +147,10 @@ class CoopApp {
         this.config = config;
         this.app = express();
         configure(this.app, this.config);
+    }
+
+    getApp() {
+        return this.app;
     }
 
     start(keyPath, certPath) {
