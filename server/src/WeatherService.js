@@ -56,14 +56,6 @@ class WeatherService {
                             reject(new Error('No response data received'));
                         }
                     });
-
-                    res.on('error', (err) => {
-                        var msg = 'Error fetching data from weather service';
-                        log.error({
-                            err: err
-                        }, msg);
-                        reject(new Error(msg));
-                    });
                 } else {
                     reject(new Error('Unexpected response status: ' + res.statusCode));
                 }

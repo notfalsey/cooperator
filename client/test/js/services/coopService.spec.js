@@ -103,7 +103,6 @@ describe('coopService test', function() {
         }).respond(500);
 
         coopServiceInstance.commandDoor(dirToTest).then(function() {
-            console.log('no error returned');
             // we should have failed
             assert.fail();
             done(new Error('should have thrown error'));

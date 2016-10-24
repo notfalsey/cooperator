@@ -5,7 +5,7 @@ var assert = require('assert'),
     bodyParser = require('body-parser'),
     express = require('express'),
     request = require('supertest'),
-    sinon = require('sinon'),
+    sinon = require('sinon-as-promised')(Promise),
     coop = require('../../src/routes/coop');
 
 describe('routes/coop', () => {
@@ -78,7 +78,7 @@ describe('routes/coop', () => {
 
         it('put /door should open door when requested', () => {
             var openDoorStub = sinon.stub();
-            openDoorStub.callsArg(0);
+            openDoorStub.resolves();
             mockCoopController.openDoor = openDoorStub;
             return request(app)
                 .put(baseUri + '/door')
@@ -96,7 +96,7 @@ describe('routes/coop', () => {
 
         it('put /door should return 500 when open door fails', () => {
             var openDoorStub = sinon.stub();
-            openDoorStub.callsArgWith(0, new Error('failed to open'));
+            openDoorStub.rejects(new Error('failed to open'));
             mockCoopController.openDoor = openDoorStub;
             return request(app)
                 .put(baseUri + '/door')
@@ -128,7 +128,7 @@ describe('routes/coop', () => {
 
         it('put /door should close door when requested', () => {
             var closeDoorStub = sinon.stub();
-            closeDoorStub.callsArg(0);
+            closeDoorStub.resolves();
             mockCoopController.closeDoor = closeDoorStub;
             return request(app)
                 .put(baseUri + '/door')
@@ -146,7 +146,7 @@ describe('routes/coop', () => {
 
         it('put /door should return 500 when close door fails', () => {
             var closeDoorStub = sinon.stub();
-            closeDoorStub.callsArgWith(0, new Error('failed to close'));
+            closeDoorStub.rejects(new Error('failed to close'));
             mockCoopController.closeDoor = closeDoorStub;
             return request(app)
                 .put(baseUri + '/door')
@@ -164,7 +164,7 @@ describe('routes/coop', () => {
 
         it('put /door should put door into auto mode when requested', () => {
             var autoDoorStub = sinon.stub();
-            autoDoorStub.callsArg(0);
+            autoDoorStub.resolves();
             mockCoopController.autoDoor = autoDoorStub;
             return request(app)
                 .put(baseUri + '/door')
@@ -182,7 +182,7 @@ describe('routes/coop', () => {
 
         it('put /door should return 500 when set auto mode fails', () => {
             var autoDoorStub = sinon.stub();
-            autoDoorStub.callsArgWith(0, new Error('failed to set auto mode'));
+            autoDoorStub.rejects(new Error('failed to set auto mode'));
             mockCoopController.autoDoor = autoDoorStub;
             return request(app)
                 .put(baseUri + '/door')
@@ -202,7 +202,7 @@ describe('routes/coop', () => {
     describe('/reset', () => {
         it('put /reset should send reset command to coop', () => {
             var resetStub = sinon.stub();
-            resetStub.callsArg(0);
+            resetStub.resolves();
             mockCoopController.reset = resetStub;
             return request(app)
                 .put(baseUri + '/reset')

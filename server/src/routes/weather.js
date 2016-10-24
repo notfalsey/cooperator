@@ -4,30 +4,43 @@ var log = require('../logger.js')();
 
 function setup(app, url, weatherService) {
 
+    function end(res) {
+        res.end();
+        log.trace({
+            res: res
+        }, 'Sending response');
+    }
+
     app.get(url + '/sunrise', function(req, res) {
-        log.trace('Entering get ' + url + '/sunrise');
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/sunrise');
         var sunrise = weatherService.getSunrise();
         log.debug({
             sunrise: sunrise
         }, 'Read sunrise');
         res.status(200).json(sunrise);
-        res.end();
+        end(res);
     });
 
     app.get(url + '/sunset', function(req, res) {
-        log.trace('Entering get ' + url + '/sunset');
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/sunset');
         var sunset = weatherService.getSunset();
         log.debug({
             sunset: sunset
         }, 'Read sunset');
         res.status(200).json(sunset);
-        res.end();
+        end(res);
     });
 
     app.get(url + '/errors', function(req, res) {
-        log.trace('Entering get ' + url + '/errors');
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/errors');
         res.status(200).json(weatherService.getErrorCount());
-        res.end();
+        end(res);
     });
 }
 

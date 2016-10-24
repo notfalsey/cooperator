@@ -1,21 +1,24 @@
+'use strict';
+
+var Promise = require('bluebird');
+
 var ret = null;
 
 function i2cMock(address, config) {}
 i2cMock.prototype = {
-    read: function(num, callback) {
-        callback(null, []);
+    read: (num) => {
+        return Promise.resolve([]);
     },
-    writeBytes: function(command, args, callback) {
-        callback(null);
+    writeBytes: (command, args) => {
+        return Promise.resolve();
     }
 };
-// if we are on linux return i2c; otherwise mock it out to devlopment on mac
+// if we are on linux return i2c; otherwise mock it out for development on mac
 if (/^linux/.test(process.platform) === false) {
-
     // mock i2c
     ret = i2cMock;
 } else {
-    ret = require('i2c');
+    ret = Promise.promisifyAll(require('i2c'));
 }
 
 module.exports = ret;

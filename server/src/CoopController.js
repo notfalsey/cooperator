@@ -1,175 +1,187 @@
+'use strict';
+
 var async = require('async'),
+    Promise = require('bluebird'),
     i2c = require('./i2cWrapper.js'),
-    NotifyService = require('./NotifyService.js'),
     log = require('./logger.js')();
 
-function CoopController(config, weatherService) {
-    log.info('Initializing coop controller');
-    this.i2cAddress = 0x05;
-    log.debug({
-        address: this.i2cAddress
-    }, 'Using i2C address');
-    this.messageInProgress = false;
-    this.sunsetDeltaMinutes = config.sunsetDeltaMinutes;
-    this.sunriseDeltaMinutes = config.sunriseDeltaMinutes;
-    this.weatherService = weatherService;
-    this.enableMailNotify = config.enableMailNotify;
-    this.notifyService = new NotifyService(config);
-    this.commandQueue = [];
-    this.writeErrorCount = 0;
-    this.readErrorCount = 0;
-    this.autoResetCount = 0;
-    this.lastSuccessfulRead = -1;
-    this.lastSuccessfulWrite = -1;
-    this.lastError = -1;
-    this.longestUptime = 0;
-    this.timeToTransition = 15000;
-    this.activeDoorCommand = -1;
-    this.doorCommandExpiration = null;
-    this.lastNonErrorDoorState = null;
+// config: key/value object with sunsetDeltaMinutes, sunriseDeltaMinutes, enableMailNotify
+// weatherService: weatherunderground service wrapper
+// notifyService: notification service with notify() method
+// i2c: i2c wire wrapper with read/writeBytes methods
+class CoopController {
 
-    this.doorStates = {
-        open: 0,
-        transitioning: 1,
-        closed: 2
-    };
+    constructor(config, weatherService, notifyService, customI2c) {
+        log.info('Initializing coop controller');
+        if (customI2c) {
+            log.info('Using custom i2c implementation');
+            this.i2c = customI2c;
+        } else {
+            log.info('Using default i2c wrapper');
+            this.i2c = i2c;
+        }
+        this.i2cAddress = 0x05;
+        log.debug({
+            address: this.i2cAddress
+        }, 'Using i2C address');
+        this.messageInProgress = false;
+        this.sunsetDeltaMinutes = config.sunsetDeltaMinutes;
+        this.sunriseDeltaMinutes = config.sunriseDeltaMinutes;
+        this.weatherService = weatherService;
+        this.enableNotify = config.enableNotify;
+        this.notifyService = notifyService;
+        this.commandQueue = [];
+        this.writeErrorCount = 0;
+        this.readErrorCount = 0;
+        this.autoResetCount = 0;
+        this.lastSuccessfulRead = -1;
+        this.lastSuccessfulWrite = -1;
+        this.lastError = -1;
+        this.longestUptime = 0;
+        this.timeToTransition = 15000;
+        this.activeDoorCommand = -1;
+        this.doorCommandExpiration = null;
+        this.lastNonErrorDoorState = null;
 
-    this.state = {
-        light: -1,
-        door: -1,
-        uptime: -1,
-        temp: -1,
-        mode: -1,
-        closing: false,
-        opening: false
-    };
+        this.doorStates = {
+            open: 0,
+            transitioning: 1,
+            closed: 2
+        };
 
-    this.commands = {
-        echo: 0,
-        reset: 1,
-        readTemp: 2,
-        readLight: 3,
-        readDoor: 4,
-        closeDoor: 5,
-        openDoor: 6,
-        autoDoor: 7,
-        readUptime: 8,
-        readMode: 9
-    };
+        this.state = {
+            light: -1,
+            door: -1,
+            uptime: -1,
+            temp: -1,
+            mode: -1,
+            closing: false,
+            opening: false
+        };
 
-    this.syncLoop();
-}
+        this.commands = {
+            echo: 0,
+            reset: 1,
+            readTemp: 2,
+            readLight: 3,
+            readDoor: 4,
+            closeDoor: 5,
+            openDoor: 6,
+            autoDoor: 7,
+            readUptime: 8,
+            readMode: 9
+        };
 
-CoopController.prototype = {
+        this.syncLoop();
+    }
 
-    sendCommand: function(wire, command, args, callback) {
+    sendCommand(wire, command, args) {
         log.trace('Entering sendCommand');
-        var self = this;
-        if (!self.messageInProgress) {
-            self.messageInProgress = true;
+        if (!this.messageInProgress) {
+            this.messageInProgress = true;
             log.debug({
                 command: command,
                 args: args
             }, 'Sending i2C command');
-            try {
-                wire.writeBytes(command, args, function(err) {
-                    if (err) {
-                        self.lastError = new Date();
-                        self.writeErrorCount++;
-                        self.messageInProgress = false;
-                        var msg = 'Error writing data to i2c bus';
-                        log.error({
-                            command: command,
-                            args: args,
-                            err: err
-                        }, msg);
-                        callback(new Error(msg));
-                    } else {
-                        self.lastSuccessfulWrite = new Date();
+
+            return wire.writeBytes(command, args)
+                .then(() => {
+                    this.lastSuccessfulWrite = new Date();
+                    return new Promise((resolve, reject) => {
                         setTimeout(function() {
-                            log.trace('Reading i2C command response');
-                            wire.read(4, function(err, readBytes) {
-                                self.messageInProgress = false;
-                                if (err) {
-                                    self.lastError = new Date();
-                                    self.readErrorCount++;
-                                    var msg = 'Error reading data from i2c bus';
-                                    log.error({
-                                        command: command,
-                                        args: args,
-                                        err: err
-                                    }, msg);
-                                    callback(new Error(msg));
-                                } else {
-                                    self.lastSuccessfulRead = new Date();
-                                    var reading = (readBytes[0] << 24) + (readBytes[1] << 16) + (readBytes[2] << 8) + readBytes[3];
-                                    log.debug({
-                                        command: command,
-                                        args: args,
-                                        readBytes: readBytes,
-                                        reading: reading
-                                    }, 'Read data from i2c bus');
-                                    callback(null, reading);
-                                }
-                            });
+                            resolve();
                         }, 100);
-                    }
+                    });
+                })
+                .then(() => {
+                    return wire.read(4)
+                        .then((readBytes) => {
+                            this.messageInProgress = false;
+                            this.lastSuccessfulRead = new Date();
+                            var reading = (readBytes[0] << 24) + (readBytes[1] << 16) + (readBytes[2] << 8) + readBytes[3];
+                            log.debug({
+                                command: command,
+                                args: args,
+                                readBytes: readBytes,
+                                reading: reading
+                            }, 'Read data from i2c bus');
+                            return reading;
+                        })
+                        .catch((err) => {
+                            this.lastError = new Date();
+                            this.readErrorCount++;
+                            log.error({
+                                command: command,
+                                args: args,
+                                err: err
+                            }, 'Error reading data from i2c bus');
+                            throw err;
+                        });
+                })
+                .catch((err) => {
+                    this.lastError = new Date();
+                    this.writeErrorCount++;
+                    this.messageInProgress = false;
+                    log.error({
+                        command: command,
+                        args: args,
+                        err: err
+                    }, 'Error writing data to i2c bus');
+                    throw err;
                 });
-            } catch (err) {
-                self.messageInProgress = false;
-                log.error({
-                    err: err
-                }, 'Exception occurred trying to send i2c command');
-                callback(new Error(err));
-            }
         } else {
             var msg = 'Error: i2c message in progress';
             log.error({
                 command: command,
                 args: args
             }, msg);
-            callback(new Error(msg));
+            return Promise.reject(new Error(msg));
         }
-    },
+    }
 
     // update all of the readable state from the coop
-    syncLoop: function() {
+    syncLoop() {
         log.trace('Entering updateState');
-        var self = this;
         var delayBetween = 100;
         log.debug({
-            address: self.i2cAddress
+            address: this.i2cAddress
         }, 'Joining i2C bus');
-        var wire = new i2c(self.i2cAddress, {
+        var wire = new this.i2c(this.i2cAddress, {
             device: '/dev/i2c-1',
             debug: false
         }); // point to your i2c address, debug provides REPL interface
         async.whilst(
-            function() {
+            () => {
                 return true;
             },
-            function(callback) {
-                // reset the wire on each batch of commands to keep a healthy state
-                //var wire = new i2c(self.i2cAddress, {device: '/dev/i2c-1', debug: false}); // point to your i2c address, debug provides REPL interface
+            (callback) => {
                 async.series([
-                    function(callback) {
+                    (callback) => {
                         log.trace({
-                            commandLength: self.commandQueue.length
+                            commandLength: this.commandQueue.length
                         }, 'Servicing queued commands');
-                        var commandsToService = self.commandQueue;
-                        self.commandQueue = [];
-                        async.eachSeries(commandsToService, function(command, callback) {
+                        var commandsToService = this.commandQueue;
+                        this.commandQueue = [];
+                        async.eachSeries(commandsToService, (command, callback) => {
                             log.trace({
                                 command: command
                             }, 'Sending command');
-                            self.sendCommand(wire, command.command, command.args, function(err) {
-                                if (command.command === self.commands.reset) {
-                                    self.state.uptime = -1;
+                            this.sendCommand(wire, command.command, command.args).then((data) => {
+                                if (command.command === this.commands.reset) {
+                                    this.state.uptime = -1;
                                 }
+                                command.resolve(data);
+                                // always keep going even if error
+                                setTimeout(callback, delayBetween);
+                            }).catch((err) => {
+                                log.error({
+                                    err: err
+                                }, 'Error sending command');
+                                command.reject(err);
                                 // always keep going even if error
                                 setTimeout(callback, delayBetween);
                             });
-                        }, function(err, results) {
+                        }, (err, results) => {
                             if (err) {
                                 log.error({
                                     err: err
@@ -180,100 +192,111 @@ CoopController.prototype = {
                         });
                     },
                     // read uptime before other state so we know if the coop was recently reset before reading others
-                    function(callback) {
+                    (callback) => {
                         log.trace('Reading uptime');
-                        self.sendCommand(wire, self.commands.readUptime, [], function(err, uptime) {
-                            if (err) {
-                                log.error('Error reading uptime');
-                            } else {
-                                if (uptime > self.longestUptime) {
-                                    self.longestUptime = uptime;
-                                }
-                                if (uptime < self.state.uptime && self.state.uptime < (Math.pow(2, 32) - 10000)) {
-                                    self.autoResetCount++;
-                                    log.error({
-                                        uptime: uptime,
-                                        lastUptime: self.state.uptime
-                                    }, 'Coop controller reset');
-                                }
-                                self.state.uptime = uptime;
+                        this.sendCommand(wire, this.commands.readUptime, []).then((uptime) => {
+                            if (uptime > this.longestUptime) {
+                                this.longestUptime = uptime;
                             }
+                            if (uptime < this.state.uptime && this.state.uptime < (Math.pow(2, 32) - 10000)) {
+                                this.autoResetCount++;
+                                log.error({
+                                    uptime: uptime,
+                                    lastUptime: this.state.uptime
+                                }, 'Coop controller reset');
+                            }
+                            this.state.uptime = uptime;
+                            setTimeout(callback, delayBetween);
+                        }).catch((err) => {
+                            log.error('Error reading uptime');
                             // always keep going even if error
                             setTimeout(callback, delayBetween);
                         });
                     },
-                    function(callback) {
+                    (callback) => {
                         log.trace('Reading door state');
-                        self.sendCommand(wire, self.commands.readDoor, [], function(err, door) {
-                            if (err) {
-                                log.error('Error reading door');
-                                self.state.door = -1;
-                            } else {
-                                // first lets compare current state against previous state and send a notification of state change if necessary
-                                if (self.enableMailNotify === true && self.lastNonErrorDoorState === self.doorStates.transitioning) {
-                                    if (door === self.doorStates.open) {
-                                        log.info('Door is now open');
-                                        self.notifyService.notify('Door opened', 'Its a brand new day!');
-                                    } else if (door === self.doorStates.closed) {
-                                        log.info('Door is now closed');
-                                        self.notifyService.notify('Door closed', 'Safe and sound.');
-                                    }
+                        this.sendCommand(wire, this.commands.readDoor, []).then((door) => {
+                            // first lets compare current state against previous state and send a notification of state change if necessary
+                            if (this.enableNotify === true && this.lastNonErrorDoorState === this.doorStates.transitioning) {
+                                if (door === this.doorStates.open) {
+                                    log.info('Door is now open');
+                                    this.notifyService.notify('Door opened', 'Its a brand new day!')
+                                        .then(() => {
+                                            log.info('Notification sent');
+                                        }).catch((err) => {
+                                            log.error({
+                                                err: err
+                                            }, 'Error sending notification');
+                                        });
+                                } else if (door === this.doorStates.closed) {
+                                    log.info('Door is now closed');
+                                    this.notifyService.notify('Door closed', 'Safe and sound.')
+                                        .then(() => {
+                                            log.info('Notification sent');
+                                        }).catch((err) => {
+                                            log.error({
+                                                err: err
+                                            }, 'Error sending notification');
+                                        });
                                 }
-                                self.lastNonErrorDoorState = self.state.door = door;
                             }
+                            this.lastNonErrorDoorState = this.state.door = door;
+                            setTimeout(callback, delayBetween);
+                        }).catch((err) => {
+                            log.error('Error reading door');
+                            this.state.door = -1;
                             // always keep going even if error
                             setTimeout(callback, delayBetween);
                         });
                     },
-                    function(callback) {
+                    (callback) => {
                         log.trace('Reading override mode');
-                        self.sendCommand(wire, self.commands.readMode, [], function(err, mode) {
-                            if (err) {
-                                log.error('Error reading override mode');
-                                self.state.mode = -1;
-                            } else {
-                                self.state.mode = mode;
-                            }
+                        this.sendCommand(wire, this.commands.readMode, []).then((mode) => {
+                            this.state.mode = mode;
+                            setTimeout(callback, delayBetween);
+                        }).catch((err) => {
+                            log.error('Error reading override mode');
+                            this.state.mode = -1;
                             // always keep going even if error
                             setTimeout(callback, delayBetween);
                         });
                     },
-                    function(callback) {
+                    /*(callback) => {
                         log.trace('Reading light');
-                        self.sendCommand(wire, self.commands.readLight, [], function(err, light) {
+                        this.sendCommand(wire, this.commands.readLight, [], (err, light) => {
                             if (err) {
                                 log.error('Error reading light');
-                                self.state.light = -1;
+                                this.state.light = -1;
                             } else {
-                                self.state.light = light;
+                                this.state.light = light;
                             }
                             // always keep going even if error
                             setTimeout(callback, delayBetween);
                         });
                     },
-                    /*function(callback) {
+                    (callback) => {
                     	log.trace('Updating temperature');
-                    	self.sendCommand(wire, self.commands.readTemp, [], function(err, temp) {
+                    	this.sendCommand(wire, this.commands.readTemp, [], function(err, temp) {
                     		if(err) {
                     			log.error('Error reading temp');
                     		} else {
-                    			self.state.temp = temp;
+                    			this.state.temp = temp;
                     		}
                     		// always keep going even if error
                     		setTimeout(callback, delayBetween);
                     	});	
                     },*/
-                    function(callback) {
+                    (callback) => {
                         log.trace('checking door');
-                        self.checkDoor(wire, self.state.door, function(err) {
-                            if (err) {
-                                log.error('Error checking door');
-                            }
+                        this.checkDoor(wire, this.state.door).then(() => {
+                            setTimeout(callback, delayBetween);
+                        }).catch((err) => {
+                            log.error('Error checking door');
                             // always keep going even if error
                             setTimeout(callback, delayBetween);
                         });
                     }
-                ], function(err, results) {
+                ], (err) => {
                     if (err) {
                         log.error({
                             err: err
@@ -287,77 +310,98 @@ CoopController.prototype = {
                     //wire.close();
                 });
             },
-            function(err, results) {
+            (err) => {
                 // this should never stop
                 log.error({
                     err: err
                 }, 'Error in syncLoop');
             });
-    },
+    }
 
-    requestCommand: function(command, args, callback) {
+    requestCommand(command, args) {
         log.trace('Entering requestCommand');
-        this.commandQueue.push({
-            command: command,
-            args: args,
-            callback: callback
+        return new Promise((resolve, reject) => {
+            this.commandQueue.push({
+                command: command,
+                args: args,
+                resolve: resolve,
+                reject: reject
+            });
         });
-    },
+    }
 
-    readLight: function() {
+    readLight() {
         return this.state.light;
-    },
-    readTemp: function() {
+    }
+
+    readTemp() {
         return this.state.temp;
-    },
-    readDoor: function() {
+    }
+
+    readDoor() {
         return this.state.door;
-    },
-    readUptime: function(callback) {
+    }
+
+    readUptime() {
         return this.state.uptime;
-    },
-    readMode: function(callback) {
+    }
+
+    readMode() {
         return this.state.mode;
-    },
-    echo: function(args, callback) {
-        this.requestCommand(this.commands.echo, args, callback);
-    },
-    reset: function(callback) {
-        this.requestCommand(this.commands.reset, [], callback);
-    },
-    closeDoor: function(callback) {
+    }
+
+    echo(args) {
+        log.trace('Entering echo');
+        log.info({
+            args: args
+        }, 'Requesting echo');
+        return this.requestCommand(this.commands.echo, args);
+    }
+
+    reset() {
+        log.trace('Entering reset');
+        log.info('Requesting reset');
+        return this.requestCommand(this.commands.reset, []);
+    }
+
+    closeDoor() {
         log.trace('Entering closeDoor');
         this.activeDoorCommand = this.commands.closeDoor;
         this.doorCommandExpiration = this.getDoorCommandExpiration();
         log.info({
             expiration: this.doorCommandExpiration
         }, 'Requesting close door');
-        this.requestCommand(this.commands.closeDoor, [], callback);
-    },
-    openDoor: function(callback) {
+        return this.requestCommand(this.commands.closeDoor, []);
+    }
+
+    openDoor() {
         log.trace('Entering openDoor');
-        console.log('test');
         this.activeDoorCommand = this.commands.openDoor;
         this.doorCommandExpiration = this.getDoorCommandExpiration();
         log.info({
             expiration: this.doorCommandExpiration
         }, 'Requesting open door');
-        this.requestCommand(this.commands.openDoor, [], callback);
-    },
-    autoDoor: function(callback) {
+        return this.requestCommand(this.commands.openDoor, []);
+    }
+
+    autoDoor() {
         log.trace('Entering autoDoor');
-        this.requestCommand(this.commands.autoDoor, [], callback);
-    },
-    isClosing: function(callback) {
+        return this.requestCommand(this.commands.autoDoor, []);
+    }
+
+    isClosing() {
         return this.state.closing;
-    },
-    isOpening: function(callback) {
+    }
+
+    isOpening() {
         return this.state.opening;
-    },
-    getCurrentMinutes: function(currentTime) {
+    }
+
+    getCurrentMinutes(currentTime) {
         return currentTime.getHours() * 60 + currentTime.getMinutes();
-    },
-    getDoorCommandExpiration: function() {
+    }
+
+    getDoorCommandExpiration() {
         log.trace('Entering getDoorCommandExpiration');
         var currentTime = new Date();
         var sunrise = this.weatherService.getSunrise();
@@ -386,77 +430,70 @@ CoopController.prototype = {
             ret: ret
         }, 'Returning from getDoorCommandExpiration with tomorrows sunrise');
         return ret;
-    },
-    checkDoor: function(wire, state, callback) {
+    }
+
+    checkDoor(wire, state) {
         log.trace('Entering checkCoop');
-        var self = this;
         var currentTime = new Date();
         // check if last manual door command needs to expire
-        if (self.activeDoorCommand !== -1 && currentTime.getTime() >= self.doorCommandExpiration.getTime()) {
+        if (this.activeDoorCommand !== -1 && currentTime.getTime() >= this.doorCommandExpiration.getTime()) {
             log.info({
-                command: self.activeDoorCommand
+                command: this.activeDoorCommand
             }, 'Manual door command expired, resetting it');
-            self.activeDoorCommand = -1;
-            self.doorCommandExpiration = null;
+            this.activeDoorCommand = -1;
+            this.doorCommandExpiration = null;
         }
-        var currentMinutes = self.getCurrentMinutes(currentTime);
+        var currentMinutes = this.getCurrentMinutes(currentTime);
 
-        var openingTime = self.getOpeningTime();
-        var closingTime = self.getClosingTime();
+        var openingTime = this.getOpeningTime();
+        var closingTime = this.getClosingTime();
 
-        if (self.activeDoorCommand !== -1) {
+        if (this.activeDoorCommand !== -1) {
             // there is an active manual door command, so honor it
             log.trace({
-                command: self.activeDoorCommand
+                command: this.activeDoorCommand
             }, 'Sending manual command to door');
-            self.sendCommand(wire, self.activeDoorCommand, [], function(err) {
-                if (err) {
-                    log.error({
-                        err: err
-                    }, 'Error sending manual door commands');
-                } else {
-                    log.trace('Send manual door command');
-                }
-                callback(err);
+            return this.sendCommand(wire, this.activeDoorCommand, []).then(() => {
+                log.trace('Send manual door command');
+            }).catch((err) => {
+                log.error({
+                    err: err
+                }, 'Error sending manual door commands');
+                throw err;
             });
-
         } else if (closingTime !== null && openingTime !== null) {
             // if we have an auto open time and close time and there is no active manual door command
             if (currentMinutes < openingTime || currentMinutes > closingTime) {
                 log.trace('Sending command to close door');
                 // we need to close the door
-                self.sendCommand(wire, self.commands.closeDoor, [], function(err) {
-                    if (err) {
-                        log.error({
-                            err: err
-                        }, 'Error closing coop door');
-                    } else {
-                        log.trace('Sent close coop door command');
-                    }
-                    callback(err);
+                return this.sendCommand(wire, this.commands.closeDoor, []).then(() => {
+                    log.trace('Sent close coop door command');
+                }).catch((err) => {
+                    log.error({
+                        err: err
+                    }, 'Error closing coop door');
+                    throw err;
                 });
             } else {
                 log.trace('Sending command to open door');
                 // we need to open the door
-                self.sendCommand(wire, self.commands.openDoor, [], function(err) {
-                    if (err) {
-                        log.error({
-                            err: err
-                        }, 'Error opening coop door');
-                    } else {
-                        log.trace('Sent open coop door command');
-                    }
-                    callback(err);
+                return this.sendCommand(wire, this.commands.opemDoor, []).then(() => {
+                    log.trace('Sent open coop door command');
+                }).catch((err) => {
+                    log.error({
+                        err: err
+                    }, 'Error opening coop door');
+                    throw err;
                 });
             }
         } else {
             var msg = 'Did not have a valid closing or opening time';
             log.warn(msg);
-            callback(new Error(msg));
+            Promise.reject(new Error(msg));
         }
+    }
 
-    },
-    getClosingTime: function() {
+    getClosingTime() {
         log.trace('Entering getClosingTime');
         var ret = null;
         var sunset = this.weatherService.getSunset();
@@ -465,8 +502,9 @@ CoopController.prototype = {
             ret = sunsetMinutes + this.sunsetDeltaMinutes;
         }
         return ret;
-    },
-    getOpeningTime: function() {
+    }
+
+    getOpeningTime() {
         log.trace('Entering getOpeningTime');
         var ret = null;
         var sunrise = this.weatherService.getSunrise();
@@ -475,28 +513,35 @@ CoopController.prototype = {
             ret = sunriseMinutes + this.sunriseDeltaMinutes;
         }
         return ret;
-    },
-    getReadErrorCount: function() {
+    }
+
+    getReadErrorCount() {
         return this.readErrorCount;
-    },
-    getWriteErrorCount: function() {
+    }
+
+    getWriteErrorCount() {
         return this.writeErrorCount;
-    },
-    getAutoResetCount: function() {
+    }
+
+    getAutoResetCount() {
         return this.autoResetCount;
-    },
-    getLastSuccessfulRead: function() {
+    }
+
+    getLastSuccessfulRead() {
         return this.lastSuccessfulRead;
-    },
-    getLastSuccessfulWrite: function() {
+    }
+
+    getLastSuccessfulWrite() {
         return this.lastSuccessfulWrite;
-    },
-    getLastError: function() {
+    }
+
+    getLastError() {
         return this.lastError;
-    },
-    getLongestUptime: function() {
+    }
+
+    getLongestUptime() {
         return this.longestUptime;
     }
-};
+}
 
 module.exports = CoopController;
