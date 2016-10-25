@@ -1,0 +1,1780 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+
+        <title>Test It Like You MEAN It 10/25/16</title>
+        <base href="../reveal/">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"/>
+
+        <link rel="stylesheet" href="css/reveal.css">
+        <!--<link rel="stylesheet" href="css/theme/tanium.css" id="theme">-->
+        <link rel="stylesheet" href="css/theme/league_custom.css" id="theme">
+
+        <!-- Theme used for syntax highlighting of code -->
+        <link rel="stylesheet" href="lib/css/zenburn.css">
+
+    </head>
+
+    <body>
+
+        <div class="reveal">
+
+            <!-- Any section element inside of this container is displayed as a slide -->
+            <div class="slides">
+                <section>
+                    <h2>Test It Like You MEAN It</h2>
+                    <!--<h3><font color="lightblue">An overview and demonstration of testing the MEAN stack</font></h3>-->
+                    <p><font color="#13DAEC">An overview and demonstration of testing the MEAN stack</font></p>
+                    <br>
+                    <p>
+                        <small>Aaron Tarter ajtarter@gmail.com</a></small>
+                    </p>
+                </section>
+
+                <section>
+                    <h2>About Tanium</h2>
+                    <img src="../img/ask_know_act.png" style="border: none; max-width: 50%;"/>
+                </section>
+
+                <section>
+                    <h2>The Tanium architecture</h2>
+                    <img src="../img/tanium_ring.png" style="border: none; max-width: 60%;"/>
+                </section>
+
+                <section>
+                    <h2>The Tanium products</h2>
+                    <small>15-Second Visibility and Control Over Every Endpoint. Even Across the Largest Networks.</small>
+                    <img src="../img/overview.png" style="border: none; max-height: 75%; max-width: 75%;"/>
+                </section>
+
+                <section>
+                    <h2>What is the MEAN stack?</h2>
+                    <ul>
+                        <li class="fragment"><font color="#13DAEC">M</font>ongo</li>
+                        <li class="fragment"><font color="#13DAEC">E</font>xpress</li>
+                        <li class="fragment"><font color="#13DAEC">A</font>ngular</li>
+                        <li class="fragment"><font color="#13DAEC">N</font>ode</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Why test it?</h2>
+                    <ul>
+                        <li class="fragment">You want it to actually run (remember this is javascript)</li>
+                        <li class="fragment">Confident refactoring</li>
+                        <li class="fragment">Frequent release cycles or urgent hot fixes that demand fast regression feedback</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <blockquote>"The language for web applications is JavaScript, which is a very <font color="#13DAEC">dynamic language without static typing</font>. There is no compiler that could catch mistakes like misspelling a variable name or calling a non existing method on an object - developers have to actually run the code to catch these issues. <font color="#13DAEC">Therefore testing is absolutely necessary.</font>"</blockquote>
+                    <p>Vojta J&#237;na, creator of Karma</p>
+                </section>
+                <section>
+                    <p>Good news</p>
+                    <h2>Javascript is easy to test!</h2>
+                    <img src="../img/easy_button.jpeg"/>
+                </section>                
+
+                <section>
+                    <h2>My backyard chicken coop</font></h2>
+                    <img src="../img/cooperator_layout.png"/>
+                </section>
+
+                <section>
+                    <h2>The app under test: <font color="#13DAEC">Cooperator</font></h2>
+                    <table>
+                        <tr>
+                            <td>
+                            <img src="../img/cooperator.jpg" style="vertical-align: bottom;"/>
+                            </td>
+                            <td>
+                                <ul>
+                                    <li class="fragment">MEAN app running on a Raspberry Pi</li>
+                                    <li class="fragment">Opens/closes chicken coop door at sunrise/sunset for free ranging chickens</li>
+                                    <li class="fragment">Send text message on open/close</li>
+                                    <li class="fragment">Buttons and video display to manually open/close</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </table>
+                </section>
+
+                <section>
+                    <h2>Cooperator architecture</font></h2>
+                    <img src="../img/coop_arch.png"/>
+                </section>
+
+                <section>
+                    <h2>Testing actually saves lives</h2>
+                    <ul>
+                        <p class="fragment">There are lots of chicken predators: </p>
+                        <table style="border: none;"> 
+                            <tbody>
+                                <tr style="border: none;" class="fragment"><td>vicious raccoons</td><td><img src="../img/raccoon.jpg" style="vertical-align: middle; border: none; max-height: 25%;"/></td></tr>
+                                <tr style="border: none;"class="fragment"><td>ferocious opossums</td><td><img src="../img/opossum.jpeg"  style="vertical-align: middle; border: none; max-height: 45%;"/></td></tr>
+                                <tr class="fragment"><td>unbalanced humans</td><td><img src="../img/crazyHuman.jpg" style="vertical-align: middle; border: none; max-height: 25%;"/></td></tr>
+                            </tbody>
+                        </table>
+                    </ul>
+                </section>
+
+                <section data-background-video="../img/critters_prowling.mp4">
+                    <h2>The enemy at work</h2>
+                    <img src="../img/critters_prowling.png" style="border: none; max-height: 75%; max-width: 75%;"/>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Server: node/express/mongo</h2>
+                    </section>
+
+                    <section>
+                        <h2>Writing testable code</h2>
+                        <p>Allow for easy mocking</p>
+                        <ul>
+                            <li class="fragment">Moduralize</li>
+                            <li class="fragment">Pass dependencies</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2>Cooperator REST API</h2>
+                        <pre class="stretch"><code class="js hljs">
+'use strict';
+
+var log = require('../logger.js')();
+
+function setup(app, url, controller) {
+    function end(res) {
+        res.end();
+        log.trace({
+            res: res
+        }, 'Sending response');
+    }
+
+    app.route(url + '/door')
+        .get(function(req, res) {
+            log.trace({
+                req: req
+            }, 'Entering get ' + url + '/door');
+            var door = controller.readDoor();
+            var doorString = 'transitioning';
+            if (door === 0) {
+                doorString = 'open';
+            } else if (door === 2) {
+                doorString = 'closed';
+            }
+            log.debug({
+                door: door,
+                doorString: doorString
+            }, 'Read door');
+            res.status(200).json(doorString);
+            end(res);
+        })
+        .put(function(req, res) {
+            log.trace({
+                req: req,
+                dir: req.body.dir
+            }, 'Entering put ' + url + '/door');
+            var msg;
+            if (req.body.dir === 'open') {
+                controller.openDoor().then(() => {
+                    var msg = 'Door is opening';
+                    log.debug(msg);
+                    res.status(200).json(msg);
+                    end(res);
+                }).catch((err) => {
+                    var msg = 'Error opening door';
+                    log.error({
+                        err: err
+                    }, msg);
+                    res.status(500).json(msg);
+                    end(res);
+                });
+            } else if (req.body.dir === 'close') {
+                controller.closeDoor().then(() => {
+                    var msg = 'Door is closing';
+                    log.debug(msg);
+                    res.status(200).json(msg);
+                    end(res);
+                }).catch((err) => {
+                    var msg = 'Error closing door';
+                    log.error({
+                        err: err
+                    }, msg);
+                    res.status(500).json(msg);
+                    end(res);
+                });
+            } else if (req.body.dir === 'auto') {
+                controller.autoDoor().then(() => {
+                    var msg = 'Door is in auto mode';
+                    log.debug(msg);
+                    res.status(200).json(msg);
+                    end(res);
+                }).catch((err) => {
+                    var msg = 'Error setting door to auto mode';
+                    log.error({
+                        err: err
+                    }, msg);
+                    res.status(500).json(msg);
+                    end(res);
+                });
+            } else {
+                msg = 'Invalid door direction';
+                log.error({
+                    dir: req.body.dir
+                }, msg);
+                res.status(422).json(msg);
+                end(res);
+            }
+        });
+
+    app.put(url + '/reset', function(req, res) {
+        log.trace({
+            req: req
+        }, 'Entering put ' + url + '/reset');
+        log.info('reset requested');
+        controller.reset().then(() => {
+            var msg = 'Coop is resetting';
+            log.info(msg);
+            res.status(200).json(msg);
+            end(res);
+        }).catch((err) => {
+            var msg = 'Error resetting coop';
+            log.error({
+                err: err
+            }, msg);
+            res.status(500).json(msg);
+            end(res);
+        });
+    });
+
+    app.get(url + '/temp', function(req, res) {
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/temp');
+        var temp = controller.readTemp();
+        log.debug({
+            temp: temp
+        }, 'Read temp');
+        res.status(200).json(temp);
+        end(res);
+    });
+
+    app.get(url + '/light', function(req, res) {
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/light');
+        var light = controller.readLight();
+        log.debug({
+            light: light
+        }, 'Read light');
+        res.status(200).json(light);
+        end(res);
+    });
+
+    app.get(url + '/uptime', function(req, res) {
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/uptime');
+        var uptime = controller.readUptime();
+        log.debug({
+            uptime: uptime
+        }, 'Read uptime');
+        res.status(200).json(uptime);
+        end(res);
+    });
+
+    function getHourMin(minutes) {
+        return {
+            hour: Math.floor(minutes / 60),
+            minute: minutes % 60
+        };
+    }
+
+    app.get(url + '/closetime', function(req, res) {
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/closetime');
+        var closingMinutes = controller.getClosingTime();
+        res.status(200).json(getHourMin(closingMinutes));
+        end(res);
+    });
+
+    app.get(url + '/opentime', function(req, res) {
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/opentime');
+        var openingMinutes = controller.getOpeningTime();
+        res.status(200).json(getHourMin(openingMinutes));
+        end(res);
+    });
+
+    app.get(url + '/health', function(req, res) {
+        log.trace({
+            req: req
+        }, 'Entering get ' + url + '/rerrors');
+        var health = {};
+        health.readErrors = controller.getReadErrorCount();
+        health.writeErrors = controller.getWriteErrorCount();
+        health.autoResets = controller.getAutoResetCount();
+        health.lastError = controller.getLastError().toString();
+        health.lastRead = controller.getLastSuccessfulRead().toString();
+        health.lastWrite = controller.getLastSuccessfulWrite().toString();
+        health.longestUptime = controller.getLongestUptime().toString();
+        res.status(200).json(health);
+        end(res);
+    });
+
+    app.route(url + '/mode')
+        .get(function(req, res) {
+            log.trace({
+                req: req
+            }, 'Entering get ' + url + '/mode');
+            var mode = controller.readMode();
+            var modeString = 'auto';
+            if (mode === 1) {
+                modeString = 'manual';
+            }
+            log.debug({
+                mode: mode,
+                modeString: modeString
+            }, 'Read mode');
+            res.status(200).json(modeString);
+            end(res);
+        });
+}
+
+module.exports = setup;
+                        </code></pre>
+                    </section>
+
+                    <section>
+                        <h2>Tools for testing server side</h2>
+                            <ul>
+                                <li class="fragment"><font color="#13DAEC">mocha</font>:&nbsp;&nbsp;test framework (runner)</li>
+                                <li class="fragment"><font color="#13DAEC">supertest</font>:&nbsp;&nbsp;to simulate requests to express services</li>
+                                <li class="fragment"><font color="#13DAEC">sinon</font>:&nbsp;&nbsp;to stub out methods</li>
+                                <li class="fragment"><font color="#13DAEC">nock</font>:&nbsp;&nbsp;to simulate responses from external services</li>
+                                <li class="fragment"><font color="#13DAEC">mockery</font>:&nbsp;&nbsp;to proxy require statements</li>
+                                <li class="fragment"><font color="#13DAEC">istanbul</font>:&nbsp;&nbsp;to measure coverage</li>
+                                <li class="fragment"><font color="#13DAEC">grunt</font>:&nbsp;&nbsp;to drive</li>
+                            </ul>
+                    </section>
+
+                    <section>
+                        <h2>The test framework: mocha</h2>
+                        <ul>
+                            <li class="fragment">Simple, flexible, fun</li>
+                            <li class="fragment">Designed for asyncrhonous javascript testing</li>
+                            <li class="fragment">Nice reporting</li>
+                            <li class="fragment"><b><font color="#13DAEC">describe</font></b> to declare a test suite</li>
+                            <li class="fragment"><b><font color="#13DAEC">it</font></b> to declare a test case</li>
+                            <li class="fragment">Bring your own assertions</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2>Mocha test for a coop route using supertest</h2>
+                        <pre class="stretch"><code class="js hljs">
+var assert = require('assert'),
+    bodyParser = require('body-parser'),
+    express = require('express'),
+    request = require('supertest'),
+    coop = require('../../src/routes/coop');
+
+describe('routes/coop', function() {
+    describe('/door', function() {
+        it('should return 422 when invalid direction is sent', () => {
+            var app = express();
+            app.use(bodyParser.json()); // for parsing application/json
+            // using supertest to make reuests to the express app
+            return request(app)
+                .put('/door') 
+                .set('Accept', 'application/json')
+                .send({dir: 'invalid'})
+                .expect(422)
+                .expect('Content-Type', /json/)
+                .then((response) => {
+                    assert.equal(response.body, 'Invalid door direction');
+                });
+        });     
+    });
+});
+                       </code></pre>
+                    </section>
+
+                    <section>
+                        <h2>sinon</h2>
+                        <ul>
+                            <li class="fragment"><font color="#13DAEC"><b>Spies</b>:</font>&nbsp;&nbsp;records arguments, return value, the value of this and exception thrown</li>
+                            <li class="fragment"><font color="#13DAEC"><b>Stubs</b>:</font>&nbsp;&nbsp;functions (spies) with pre-programmed (mocked) behavior</li>
+                            <li class="fragment"><font color="#13DAEC"><b>Fake timers</b>:</font>&nbsp;&nbsp;mock dates, timeouts, intervals</li>
+                            <li class="fragment"><font color="#13DAEC"><b>Sandboxing</b>:</font>&nbsp;&nbsp;easily restore globals</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2>Using sinon to stub the backend controller</h2>
+                        <pre class="stretch"><code class="js hljs">
+it('get /door should return correct door status', function() {
+    var app = express();
+    var readDoorStub = sinon.stub();
+    readDoorStub.returns(0);
+    coop(app, '/coop', {
+        readDoor: readDoorStub
+    });
+    return request(app)
+        .get('/coop/door')
+        .set('Accept', 'application/json')
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .then((response) => {
+            assert.equal(response.body, 'open');
+        });
+});
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Using sinon fake timers to advance clock</h2>
+                        <pre class="stretch"><code class="js hljs">
+var assert = require('assert'),
+    sinon = require('sinon'),
+    WeatherService = require('../src/WeatherService.js');
+
+describe('WeatherService', function() {
+
+    beforeEach(function() {
+        this.clock = sinon.useFakeTimers();
+    });
+
+    afterEach(function() {
+        this.clock = sinon.restore();
+    });
+
+    it('should refresh on configured period', function() {
+        var config = {
+            wundergroundApiKey: 'testkey',
+            state: 'NC',
+            city: 'Carrboro',
+            astronomyUpdatePeriod: 1
+        };
+        var refreshSpy = sinon.spy(WeatherService.prototype, 'refresh');
+        var getDataSpy = sinon.spy(WeatherService.prototype, 'getData');
+        var weatherService = new WeatherService(config);
+
+        assert.equal(refreshSpy.callCount, 1);
+        assert.equal(getDataSpy.callCount, 1);
+
+        this.clock.tick(12 * 60 * 60 * 1000 + 1);
+        // once immediately, and once per clock tick after that since the refresh 
+        // perios was configured to be one ms (clock tick) 
+
+        assert.equal(refreshSpy.callCount, 2);
+        assert.equal(getDataSpy.callCount, 2);
+    });
+});
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Using mockery to fake a require</h2>
+                        <pre class="stretch"><code class="js hljs">
+var assert = require('assert'),
+    mockery = require('mockery'),
+    NotifyService = require('../src/NotifyService.js');
+
+describe('NotifyService', function() {
+    var config = {
+        mailRecipients: ['test@email.com'],
+        mailFrom: 'test@no-reply.com',
+        mailApiKey: 'testkey',
+        mailDomain: 'testDomain'
+    };
+
+    before(function() {
+        mockery.enable({
+            warnOnReplace: false,
+            warnOnUnRegistered: false
+        });
+    });
+
+    afterEach(function() {
+        mockery.deregisterAll();
+    });
+
+    after(function() {
+        mockery.disable();
+    });
+
+    it('notify should call mail gun service', function() {
+        var mailgunMock = function() {
+            return {
+                messages: function() {
+                    return {
+                        send: function() {
+                            return Promise.resolve('success');
+                        }
+                    };
+                }
+            };
+        };
+        mockery.registerMock('mailgun-js', mailgunMock);
+        var notifyService = new NotifyService(config);
+        return notifyService.notify('Coop closed', 'Coop closed at ' + new Date());
+    });
+});
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Using nock to fake an external service</h2>
+                        <pre class="stretch"><code class="js hljs">
+var assert = require('assert'),
+    nock = require('nock'),
+    WeatherService = require('../src/WeatherService.js');
+
+describe('WeatherService', function() {
+    it('should make reqeusts for the configured location', function() {
+        var config = {
+            wundergroundApiKey: 'testkey',
+            state: 'NC',
+            city: 'Carrboro'
+        };
+        var testSunset = {
+            hour: 20,
+            minute: 15
+        };
+        var testSunrise = {
+            hour: 6,
+            minute: 7
+        };
+        var baseUrl = 'http://api.wunderground.com';
+        var uri = '/api/' + config.wundergroundApiKey + '/astronomy/q/' + config.state + '/' + config.city + '.json';
+        var url = baseUrl + uri;
+        nock(baseUrl)
+            .get(uri)
+            .times(2)
+            .reply(200, {
+                sun_phase: {
+                    sunset: testSunset,
+                    sunrise: testSunrise
+                }
+            });
+
+        var weatherService = new WeatherService(config);
+
+        return weatherService.refresh().then(() => {
+            assert.deepEqual(weatherService.getSunrise(), testSunrise);
+            assert.deepEqual(weatherService.getSunset(), testSunset);
+        });
+    });
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Running mocha tests</h2>
+                        <img src="../img/mocha_output.png" style="border: none; max-width: 45%;"/>
+                    </section>
+                    <section>
+                        <h2>Debugging mocha tests</h2>
+                        <p class="fragment"><img src="../img/mocha_debug_cmd_line.png" style="border: none; max-width: 70%;"/></p>
+                        <p class="fragment"><img src="../img/debug_mocha_inspector.png" style="border: none; max-width: 70%;"/></p>
+                    </section>
+                    <section>
+                        <h2>Code coverage reports using istanbul</h2>
+                        <img src="../img/server_side_coverage_report.png"/>
+                    </section>
+                    <section>
+                        <h2>Uncovered areas highlighted</h2>
+                        <img src="../img/server_side_uncovered.png" style="border: none; max-width: 70%;"/>
+                    </section>
+                    <section>
+                        <h2>Driving it with grunt</h2>
+                        <pre class="stretch"><code class="js hljs">
+module.exports = function(grunt) {
+    grunt.loadNpmTasks('grunt-mocha-istanbul');
+
+    grunt.initConfig({
+        mocha_istanbul: {
+            server: {
+                src: 'server/test/**/*',
+                options: {
+                    mask: '*.spec.js',
+                    coverage: true
+                },
+                check: {
+                    lines: 80,
+                    statements: 80
+                }
+            }
+        }
+    });
+
+    grunt.registerTask('serverTest', 'mocha_istanbul:server');
+};
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Pro tips</h2>
+                        <ul>
+                            <li class="fragment">Need to call restore on sinon stubs if they are re-used later</li>
+                            <li class="fragment">Use .only to isolate test, useful for debugging</li>
+                            <li class="fragment">set this.timeout(0) to make time unlimited when debugging</li>
+                            <li class="fragment">rename it() to omit() to exclude mocha tests</li>
+                            <li class="fragment">node-debug _mocha test.js to run test in node-inspector</li>
+                        </ul>
+                    </section>
+                </section>
+                <section>
+                    <section>
+                        <h2>Client: angular</h2>
+                    </section>
+                    <section>
+                        <h2>Coop angular service</h2>
+                        <pre class="stretch"><code class="js hljs">
+angular.module(appName)
+    .factory('coopService', ['$http', '$log', '$interval', '$location', function($http, $log, $interval, $location) {
+
+        var baseUrl = '/coop';
+
+        var commandDoor = function(dir) {
+            return $http.put(baseUrl + '/door', {
+                dir: dir
+            }).then(function(response) {
+                return response.data;
+            });
+        };
+
+        var reset = function() {
+            return $http.put(baseUrl + '/reset', {}).then(function(response) {
+                return response.data;
+            });
+        };
+
+        var getCoopData = function(valueName) {
+            return $http.get(baseUrl + '/' + valueName).then(function(response) {
+                return response.data;
+            });
+        };
+
+        var getDoorState = function() {
+            return getCoopData('door');
+        };
+
+        var getUptime = function() {
+            return getCoopData('uptime');
+        };
+
+        var getLight = function() {
+            return getCoopData('light');
+        };
+
+        var getTemp = function() {
+            return getCoopData('temp');
+        };
+
+        var getClosingTime = function() {
+            return getCoopData('closetime');
+        };
+
+        var getOpeningTime = function() {
+            return getCoopData('opentime');
+        };
+
+        var getHealth = function() {
+            return getCoopData('health');
+        };
+
+        var getMode = function() {
+            return getCoopData('mode');
+        };
+
+        return {
+            commandDoor: commandDoor,
+            getClosingTime: getClosingTime,
+            getDoorState: getDoorState,
+            getHealth: getHealth,
+            getLight: getLight,
+            getMode: getMode,
+            getOpeningTime: getOpeningTime,
+            getTemp: getTemp,
+            getUptime: getUptime,
+            reset: reset
+        };
+    }]);
+
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Coop angular controller</h2>
+                        <pre class="stretch"><code class="js hljs">
+angular.module(appName)
+    .controller('coopController', ['$scope', '$log', '$interval', '$window',
+        'coopService', 'videoService',
+        function($scope, $log, $interval, $window, coopService, videoService) {
+            $scope.openTime = '?';
+            $scope.closeTime = '?';
+            $scope.doorStates = {
+                danger: 'danger',
+                ok: 'ok',
+                transitioning: 'transitioning',
+                error: 'error',
+                unknown: 'unknown'
+            };
+            $scope.doorState = 'unknown';
+            $scope.mode = 'unknown';
+            $scope.doorHealth = $scope.doorStates.unknown;
+            $scope.uptime = '?';
+            $scope.nextOpMessage = '';
+            $scope.readErrors = '?';
+            $scope.writeErrors = '?';
+            $scope.autoResets = '?';
+            $scope.lastError = '?';
+            $scope.lastRead = '?';
+            $scope.lastWrite = '?';
+            $scope.unhealthy = false;
+            $scope.resetActive = false;
+            $scope.closeActive = false;
+            $scope.openActive = false;
+
+            var computeNextOpMessage = function() {
+                if ($scope.openTime !== '?' && $scope.closeTime !== '?' && $scope.doorState !== 'unknown') {
+                    var currentTime = new Date();
+                    var currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+                    var closeMinutes = $scope.closeTime.hour * 60 + $scope.closeTime.minute;
+                    var openMinutes = $scope.openTime.hour * 60 + $scope.openTime.minute;
+                    var deltaHours;
+                    var deltaMins;
+
+                    if ($scope.doorState === 'closed') {
+                        if (currentMinutes <= openMinutes || currentMinutes >= closeMinutes) {
+                            $scope.doorHealth = $scope.doorStates.ok;
+                            if (currentTime.getHours() < $scope.closeTime.hour) {
+                                // morning time
+                                deltaHours = Math.floor((openMinutes - currentMinutes) / 60);
+                                deltaMins = (openMinutes - currentMinutes) % 60;
+                            } else {
+                                // night time
+                                deltaHours = Math.floor((24 * 60 - currentMinutes + openMinutes) / 60);
+                                deltaMins = (24 * 60 - currentMinutes + openMinutes) % 60;
+                            }
+                            $scope.nextOpMessage = 'Opening in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
+                        } else {
+                            $scope.doorHealth = $scope.doorStates.danger;
+                            $scope.nextOpMessage = 'Door failed to open when scheduled';
+                        }
+                    } else if ($scope.doorState === 'open') {
+                        if (currentMinutes >= openMinutes && currentMinutes <= closeMinutes) {
+                            $scope.doorHealth = $scope.doorStates.ok;
+                            deltaHours = Math.floor((closeMinutes - currentMinutes) / 60);
+                            deltaMins = (closeMinutes - currentMinutes) % 60;
+
+                            $scope.nextOpMessage = 'Closing in ' + deltaHours + ' hrs and ' + deltaMins + ' mins';
+                        } else {
+                            // this is really bad!! The coop door is open and its past closing
+                            // CHICKENS MAY DIE !!!!!!
+                            $scope.doorHealth = $scope.doorStates.danger;
+                            $scope.nextOpMessage = 'Door failed to close when scheduled!!';
+                        }
+                    } else {
+                        $scope.doorHealth = $scope.doorStates.transitioning;
+                        $scope.nextOpMessage = 'Door is transitioning';
+                    }
+                }
+            };
+
+            var update = function() {
+                coopService.getClosingTime().then(function(closeTime) {
+                    $scope.closeTime = closeTime;
+                    computeNextOpMessage();
+                }, function(err) {
+                    $log.error('Error getting closing time, err: ', err);
+                    $scope.closeTime = 'error';
+                });
+
+                coopService.getOpeningTime().then(function(openTime) {
+                    $scope.openTime = openTime;
+                    computeNextOpMessage();
+                }, function(err) {
+                    $log.error('Error getting opening time, err: ', err);
+                    $scope.openTime = 'error';
+                });
+
+                coopService.getDoorState().then(function(doorState) {
+                    $scope.doorState = doorState;
+                    computeNextOpMessage();
+                }, function(err) {
+                    $log.error('Error getting door state, err: ', err);
+                    $scope.doorState = 'error';
+                });
+
+                coopService.getUptime().then(function(uptime) {
+                    var days = Math.floor(uptime / (24 * 3600 * 1000));
+                    var hours = Math.floor((uptime / (3600 * 1000)) % 24);
+                    var minutes = Math.floor((uptime / (60 * 1000)) % 60);
+                    $scope.uptime = days + ' days, ' + hours + ' hrs, ' + minutes + ' mins';
+                }, function(err) {
+                    $log.error('Error getting uptime, err: ', err);
+                    $scope.uptime = 'error';
+                });
+
+                coopService.getMode().then(function(mode) {
+                    $scope.mode = mode;
+                }, function(err) {
+                    $log.error('Error getting mode, err: ', err);
+                    $scope.mode = 'error';
+                });
+
+                coopService.getHealth().then(function(health) {
+                    $scope.health = health;
+                }, function(err) {
+                    $log.error('Error getting health, err: ' + err);
+                    $scope.health = 'error';
+                });
+            };
+
+            $scope.autoDoor = function() {
+                return coopService.commandDoor('auto').then(function() {
+                    $log.debug('Door auto command sent successfully.');
+                }, function(err) {
+                    $log.error('Error commanding door into auto mode, err: ', err);
+                });
+            };
+
+            $scope.closeDoor = function() {
+                $scope.closeActive = true;
+                $interval(function() {
+                    $scope.closeActive = false;
+                }, 20000, 1);
+                return coopService.commandDoor('close').then(function() {
+                    $log.debug('Door close command sent successfully.');
+                }, function(err) {
+                    $log.error('Error commanding door ito close, err: ', err);
+                });
+            };
+
+            $scope.openDoor = function() {
+                $scope.openActive = true;
+                $interval(function() {
+                    $scope.openActive = false;
+                }, 20000, 1);
+                return coopService.commandDoor('open').then(function() {
+                    $log.debug('Door open command sent successfully.');
+                }, function(err) {
+                    $log.error('Error commanding door ito open, err: ', err);
+                });
+            };
+
+            $scope.reset = function() {
+                $scope.resetActive = true;
+                $interval(function() {
+                    $scope.resetActive = false;
+                }, 20000, 1);
+                return coopService.reset().then(function() {
+                    update();
+                }, function(err) {
+                    $log.error('Error resetting coop, err: ', err);
+                });
+            };
+
+            $scope.panVideo = function(dir) {
+                return videoService.pan(dir);
+            };
+
+            $scope.goToVideoPreset = function(preset) {
+                return videoService.goToPreset(preset);
+            };
+
+            $scope.setIR = function(ir) {
+                return videoService.setIR(ir);
+            };
+
+            var displayTime = function(time) {
+                if (time === '?') {
+                    return time;
+                }
+                var d = new Date();
+                d.setHours(time.hour);
+                d.setMinutes(time.minute);
+                d.setSeconds(0);
+                return d.toLocaleTimeString($window.navigator.language, {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            $scope.displayCloseTime = function() {
+                return displayTime($scope.closeTime);
+            };
+
+            $scope.displayOpenTime = function() {
+                return displayTime($scope.openTime);
+            };
+
+            update();
+            $interval(update, 5000);
+        }
+    ]);
+
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h2>Tools for testing client</h2>
+                            <ul>
+                                <li class="fragment"><font color="#13DAEC">karma (testacular)</font>:&nbsp;&nbsp;runner that runs your tests in the browser</li>
+                                <li class="fragment"><font color="#13DAEC">mocha</font>:&nbsp;&nbsp;same test framework used on server, could also use jasmine</li>
+                                <li class="fragment"><font color="#13DAEC">chai</font>:&nbsp;&nbsp;assertion library</li>
+                                <li class="fragment"><font color="#13DAEC">sinon</font>:&nbsp;&nbsp;to stub out methods</li>
+                                <li class="fragment"><font color="#13DAEC">istanbul</font>:&nbsp;&nbsp;to measure coverage</li>
+                                <li class="fragment"><font color="#13DAEC">grunt</font>:&nbsp;&nbsp;to drive</li>
+                            </ul>
+                    </section>
+                    <section>
+                        <h2>Testing the angular service</h2>
+                        <pre class="stretch"><code class="js hljs">
+describe('coopService test', function() {
+    var assert = chai.assert;
+    var coopServiceInstance;
+    var httpBackend, interval, location;
+    var moduleName = 'coopApp';
+    var baseUrl = '/coop';
+    var serviceName = 'coopService';
+
+    beforeEach(function() {
+        module(moduleName);
+    });
+
+    beforeEach(inject(function($httpBackend, $injector) {
+        httpBackend = $httpBackend;
+        coopServiceInstance = $injector.get(serviceName);
+    }));
+
+    var statusTests = [{
+        url: '/door',
+        method: 'getDoorState',
+        value: 'closed'
+    }, {
+        url: '/health',
+        method: 'getHealth',
+        value: {
+            readErrors: 2
+        }
+    }, {
+        url: '/uptime',
+        method: 'getUptime',
+        value: 1234531317
+    }, {
+        url: '/closetime',
+        method: 'getClosingTime',
+        value: {
+            hour: 18,
+            minute: 54
+        }
+    }, {
+        url: '/opentime',
+        method: 'getOpeningTime',
+        value: {
+            hour: 6,
+            minute: 54
+        }
+    }, {
+        url: '/mode',
+        method: 'getMode',
+        value: 'auto'
+    }, {
+        url: '/temp',
+        method: 'getTemp',
+        value: 45
+    }, {
+        url: '/light',
+        method: 'getLight',
+        value: 795
+    }];
+
+    statusTests.forEach(function(statusTest) {
+        it('should return ' + statusTest.url + ' status', function(done) {
+            httpBackend.expectGET(baseUrl + statusTest.url).respond(200, statusTest.value);
+            coopServiceInstance[statusTest.method]().then(function(content) {
+                assert.deepEqual(statusTest.value, content);
+                done();
+            }, done);
+            httpBackend.flush();
+        });
+    });
+
+    statusTests.forEach(function(statusTest) {
+        it('should handle error on ' + statusTest.url + ' status', function(done) {
+            httpBackend.expectGET(baseUrl + statusTest.url).respond(500, statusTest.value);
+            coopServiceInstance[statusTest.method]().then(function(content) {
+                // we expect an error to be returned
+                assert.fail();
+                done(new Error('should have thrown error'));
+            }, function(err) {
+                assert(err);
+                done();
+            });
+            httpBackend.flush();
+        });
+    });
+
+    it('should properly command door', function(done) {
+        var dirToTest = 'close';
+        httpBackend.expectPUT(baseUrl + '/door', {
+            dir: dirToTest
+        }).respond(200);
+
+        coopServiceInstance.commandDoor(dirToTest).then(function() {
+            done();
+        }, done);
+
+        httpBackend.flush();
+    });
+
+    it('should handle error on door command', function(done) {
+        var dirToTest = 'close';
+        httpBackend.expectPUT(baseUrl + '/door', {
+            dir: dirToTest
+        }).respond(500);
+
+        coopServiceInstance.commandDoor(dirToTest).then(function() {
+            // we should have failed
+            assert.fail();
+            done(new Error('should have thrown error'));
+        }, function(err) {
+            // this is expected
+            assert(err);
+            done();
+        });
+
+        httpBackend.flush();
+    });
+
+    it('should properly reset coop', function(done) {
+        httpBackend.expectPUT(baseUrl + '/reset', {}).respond(200);
+
+        coopServiceInstance.reset().then(function() {
+            done();
+        }, done);
+
+        httpBackend.flush();
+    });
+
+    it('should handle error on reset coop', function(done) {
+        httpBackend.expectPUT(baseUrl + '/reset', {}).respond(500);
+
+        coopServiceInstance.reset().then(function() {
+            assert.fail();
+            done(new Error('should have thrown error'));
+        }, function(err) {
+            //this is expected
+            assert(err);
+            done();
+        });
+
+        httpBackend.flush();
+    });
+
+});
+                    </code></pre>
+                    </section>
+                    <section>
+                        <h2>Testing the angular controller</h2>
+                        <pre class="stretch"><code class="js hljs">
+describe('coopController test', function() {
+    var coopController, coopService, videoService, $scope, $injector, $q, $rootScope, $interval;
+    var moduleName = 'coopApp';
+    var coopServiceName = 'coopService';
+    var ctrlName = 'coopController';
+
+
+    var testDoorStates = {
+        danger: 'danger',
+        ok: 'ok',
+        transitioning: 'transitioning',
+        error: 'error',
+        unknown: 'unknown'
+    };
+
+    beforeEach(function() {
+        module(moduleName);
+    });
+
+    beforeEach(inject(function($controller, _$q_, _$injector_, _$rootScope_, _$interval_, _coopService_, _videoService_) {
+        coopService = _coopService_;
+        videoService = _videoService_;
+        $injector = _$injector_;
+        $q = _$q_;
+        $rootScope = _$rootScope_;
+        $interval = _$interval_;
+        sinon.stub(coopService, 'getClosingTime', function() {
+            return $q.when({
+                hour: 18,
+                minute: 4
+            });
+        });
+        sinon.stub(coopService, 'getOpeningTime', function() {
+            return $q.when({
+                hour: 5,
+                minute: 43
+            });
+        });
+        sinon.stub(coopService, 'getDoorState', function() {
+            return $q.when('closed');
+        });
+        sinon.stub(coopService, 'getUptime', function() {
+            return $q.when(0);
+        });
+        sinon.stub(coopService, 'getMode', function() {
+            return $q.when('auto');
+        });
+        sinon.stub(coopService, 'getHealth', function() {
+            return $q.when({
+                readErrors: 0
+            });
+        });
+
+        $scope = {};
+        coopController = $controller(ctrlName, {
+            $scope: $scope
+        });
+    }));
+
+    it('should properly initialize', function() {
+        assert.equal($scope.openTime, '?');
+        assert.equal($scope.closeTime, '?');
+        assert.deepEqual($scope.doorStates, testDoorStates);
+        assert.equal($scope.doorState, 'unknown');
+        assert.equal($scope.mode, 'unknown');
+        assert.equal($scope.doorHealth, $scope.doorStates.unknown);
+        assert.equal($scope.uptime, '?');
+        assert.equal($scope.nextOpMessage, '');
+        assert.equal($scope.readErrors, '?');
+        assert.equal($scope.writeErrors, '?');
+        assert.equal($scope.autoResets, '?');
+        assert.equal($scope.lastError, '?');
+        assert.equal($scope.lastRead, '?');
+        assert.equal($scope.lastWrite, '?');
+        assert.equal($scope.unhealthy, false);
+        assert.equal($scope.resetActive, false);
+        assert.equal($scope.closeActive, false);
+        assert.equal($scope.openActive, false);
+        $rootScope.$digest();
+    });
+
+    it('should set door in auto mode', function(done) {
+        sinon.stub(coopService, 'commandDoor', function(command) {
+            assert.equal(command, 'auto');
+            return $q.when('');
+        });
+        $scope.autoDoor().then(done);
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+    });
+
+    it('should handle error when setting door in auto mode', function(done) {
+        sinon.stub(coopService, 'commandDoor', function(command) {
+            assert.equal(command, 'auto');
+            return $q.reject('Error setting door in auto mode');
+        });
+        $scope.autoDoor().then(done);
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+    });
+
+    it('should close door', function() {
+        sinon.stub(coopService, 'commandDoor', function(command) {
+            assert.equal(command, 'close');
+            return $q.when('');
+        });
+
+        assert.equal($scope.closeActive, false, 'close should not be active before requesting it');
+        $scope.closeDoor();
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+        assert.equal($scope.closeActive, true, 'close should be active while it is closing');
+
+        // now flush interval to expire the 20 sec update after close
+        $interval.flush(25000);
+        assert.equal($scope.closeActive, false, 'close should not be active after it is finished');
+    });
+
+    it('should handle error on close door', function(done) {
+        sinon.stub(coopService, 'commandDoor', function(command) {
+            assert.equal(command, 'close');
+            return $q.reject('Error closing door');
+        });
+        $scope.closeDoor().then(function() {
+            done();
+        });
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+    });
+
+    it('should open door', function() {
+        sinon.stub(coopService, 'commandDoor', function(command) {
+            assert.equal(command, 'open');
+            return $q.when('');
+        });
+
+        assert.equal($scope.openActive, false, 'open should not be active before requesting it');
+        $scope.openDoor();
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+        assert.equal($scope.openActive, true, 'open should be active while it is opening');
+
+        // now flush interval to expire the 20 sec update after close
+        $interval.flush(25000);
+        assert.equal($scope.openActive, false, 'open should not be active after it is finished');
+    });
+
+    it('should handle error on open door', function(done) {
+        sinon.stub(coopService, 'commandDoor', function(command) {
+            assert.equal(command, 'open');
+            return $q.reject('Error opening door');
+        });
+        $scope.openDoor().then(function() {
+            done();
+        });
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+    });
+
+    it('should reset coop', function() {
+        sinon.stub(coopService, 'reset', function() {
+            return $q.when('');
+        });
+
+        assert.equal($scope.resetActive, false, 'reset should not be active before requesting it');
+        $scope.reset();
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+        assert.equal($scope.resetActive, true, 'reset should be active while it is closing');
+
+        // now flush interval to expire the 20 sec update after close
+        $interval.flush(25000);
+        assert.equal($scope.resetActive, false, 'reset should not be active after it is finished');
+    });
+
+    it('should handle error on reset coop', function(done) {
+        sinon.stub(coopService, 'reset', function() {
+            return $q.reject('Reset error');
+        });
+        $scope.reset().then(function() {
+            done();
+        });
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+    });
+
+    it('should pan video', function(done) {
+        var testDir = 'up';
+        sinon.stub(videoService, 'pan', function(dir) {
+            assert.equal(dir, testDir);
+            return $q.when('');
+        });
+        $scope.panVideo(testDir).then(done);
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+    });
+
+    it('should request video preset', function(done) {
+        var testPreset = 2;
+        sinon.stub(videoService, 'goToPreset', function(preset) {
+            assert.equal(preset, testPreset);
+            return $q.when('');
+        });
+        $scope.goToVideoPreset(testPreset).then(done);
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+    });
+
+    it('should request video IR set', function(done) {
+        var testIR = 'on';
+        sinon.stub(videoService, 'setIR', function(ir) {
+            assert.equal(ir, testIR);
+            return $q.when('');
+        });
+        $scope.setIR(testIR).then(done);
+        // must call digest to flush $q promises
+        $rootScope.$digest();
+    });
+
+    it('should return display open time', function() {
+        var testHours = 9;
+        var testMins = 12;
+        $scope.openTime = {
+            hour: testHours,
+            minute: testMins
+        };
+        var displayTime = $scope.displayOpenTime();
+        var parts = displayTime.split(':');
+        assert.equal(parts[0], testHours, 'should display hours correctly');
+        assert.equal(parts[1], testMins, 'should display minutes correctly');
+
+        $scope.openTime = '?';
+        assert.equal($scope.displayOpenTime(), $scope.openTime, 'should pass through uninitialized time value');
+    });
+
+    it('should return display close time', function() {
+        var testHours = 5;
+        var testMins = 23;
+        $scope.closeTime = {
+            hour: testHours,
+            minute: testMins
+        };
+        var displayTime = $scope.displayCloseTime();
+        var parts = displayTime.split(':');
+        assert.equal(parts[0], testHours, 'should display hours correctly');
+        assert.equal(parts[1], testMins, 'should display minutes correctly');
+
+        $scope.closeTime = '?';
+        assert.equal($scope.displayCloseTime(), $scope.closeTime, 'should pass through uninitialized time value');
+    });
+
+    it('should initialize handle errors on update', function() {
+        // change all stub functions called by update to return an error
+        coopService.getClosingTime.restore();
+        sinon.stub(coopService, 'getClosingTime', function() {
+            return $q.reject('Error');
+        });
+        coopService.getOpeningTime.restore();
+        sinon.stub(coopService, 'getOpeningTime', function() {
+            return $q.reject('Error');
+        });
+        coopService.getDoorState.restore();
+        sinon.stub(coopService, 'getDoorState', function() {
+            return $q.reject('Error');
+        });
+        coopService.getUptime.restore();
+        sinon.stub(coopService, 'getUptime', function() {
+            return $q.reject('Error');
+        });
+        coopService.getMode.restore();
+        sinon.stub(coopService, 'getMode', function() {
+            return $q.reject('Error');
+        });
+        coopService.getHealth.restore();
+        sinon.stub(coopService, 'getHealth', function() {
+            return $q.reject('Error');
+        });
+
+        $interval.flush(6000);
+
+        assert.equal($scope.closeTime, 'error');
+        assert.equal($scope.openTime, 'error');
+        assert.equal($scope.doorState, 'error');
+        assert.equal($scope.uptime, 'error');
+        assert.equal($scope.mode, 'error');
+        assert.equal($scope.health, 'error');
+    });
+
+    function testNextOpMessage(currentState, openTime, closeTime, now, expectedMsg, expectedHealth) {
+        coopService.getClosingTime.restore();
+        sinon.stub(coopService, 'getClosingTime', function() {
+            return $q.when(closeTime);
+        });
+        coopService.getOpeningTime.restore();
+        sinon.stub(coopService, 'getOpeningTime', function() {
+            return $q.when(openTime);
+        });
+        coopService.getDoorState.restore();
+        sinon.stub(coopService, 'getDoorState', function() {
+            return $q.when(currentState);
+        });
+        var nowTime = new Date();
+        nowTime.setHours(now.hour);
+        nowTime.setMinutes(now.minute);
+        sinon.useFakeTimers(nowTime.getTime());
+
+        $rootScope.$digest();
+        $interval.flush(6000);
+        assert.equal($scope.nextOpMessage, expectedMsg);
+        assert.equal($scope.doorHealth, expectedHealth);
+    }
+
+    it('should correctly compute next op message when closed at night after scheduled closing time', function() {
+        var closeTime = {
+            hour: 20,
+            minute: 30
+        };
+
+        var openTime = {
+            hour: 6,
+            minute: 15
+        };
+
+        var currentTime = {
+            hour: 21,
+            minute: 0
+        };
+
+        testNextOpMessage('closed', openTime, closeTime, currentTime, 'Opening in 9 hrs and 15 mins', testDoorStates.ok);
+    });
+
+    it('should correctly compute next op message when closed in morning after scheduled closing time', function() {
+        var closeTime = {
+            hour: 20,
+            minute: 30
+        };
+
+        var openTime = {
+            hour: 6,
+            minute: 15
+        };
+
+        var currentTime = {
+            hour: 1,
+            minute: 10
+        };
+
+        testNextOpMessage('closed', openTime, closeTime, currentTime, 'Opening in 5 hrs and 5 mins', testDoorStates.ok);
+    });
+
+    it('should correctly compute next op message when open after scheduled opening time', function() {
+        var closeTime = {
+            hour: 20,
+            minute: 30
+        };
+
+        var openTime = {
+            hour: 6,
+            minute: 15
+        };
+
+        var currentTime = {
+            hour: 7,
+            minute: 20
+        };
+
+        testNextOpMessage('open', openTime, closeTime, currentTime, 'Closing in 13 hrs and 10 mins', testDoorStates.ok);
+    });
+
+
+    it('should indicate danger if door is still open after the scheduled closing time', function() {
+        var closeTime = {
+            hour: 20,
+            minute: 30
+        };
+
+        var openTime = {
+            hour: 6,
+            minute: 15
+        };
+
+        var currentTime = {
+            hour: 20,
+            minute: 50
+        };
+
+        testNextOpMessage('open', openTime, closeTime, currentTime, 'Door failed to close when scheduled!!', testDoorStates.danger);
+    });
+
+    it('should indicate transioning state in health and report last op message when transitioning', function() {
+        var closeTime = {
+            hour: 20,
+            minute: 30
+        };
+
+        var openTime = {
+            hour: 6,
+            minute: 15
+        };
+
+        var currentTime = {
+            hour: 20,
+            minute: 30
+        };
+
+        testNextOpMessage('transitioning', {}, {}, currentTime, 'Door is transitioning', testDoorStates.transitioning);
+    });
+});
+                    </code></pre>
+                    </section>
+                    <section>
+                        <h2>Testing the angular directive</h2>
+                        <pre class="stretch"><code class="js hljs">
+describe('coopDirective test', function() {
+    var $scope;
+    var moduleName = 'coopApp';
+    var templateUri = '/src/views/coop-controller.html';
+    var templatePath = 'client' + templateUri;
+    var dirElement;
+    var testDoorStates = {
+        ok: 'ok',
+        transitioning: 'transitioning',
+        danger: 'danger',
+        unknown: 'unknown',
+        error: 'error'
+    };
+
+    beforeEach(module('templates'));
+    beforeEach(module(moduleName, function($controllerProvider) {
+        $controllerProvider.register('coopController', function($scope) {});
+    }));
+
+    beforeEach(inject(function($rootScope, $compile) {
+        $scope = $rootScope.$new();
+        dirElement = $compile(angular.element('<coop-controller></coop-controller>'))($scope);
+    }));
+
+    it('should initialize properly in closed/auto state', function() {
+        var testDoorState = 'closed';
+        $scope.mode = 'auto';
+        $scope.doorState = testDoorState;
+        $scope.doorStates = testDoorStates;
+        $scope.doorHealth = $scope.doorStates.ok;
+        $scope.$digest();
+
+        var divs = dirElement[0].querySelectorAll('.label-success');
+        assert.equal(divs.length, 1);
+        assert.equal(divs[0].tagName, 'SPAN');
+        assert.equal(angular.element(divs[0]).hasClass('ng-hide'), false, 'the door status should be ok');
+        assert.equal(divs[0].textContent, testDoorState);
+
+        divs = dirElement[0].querySelectorAll('.label-danger');
+        assert.equal(divs.length, 2);
+        assert.equal(divs[0].tagName, 'SPAN');
+        assert.equal(angular.element(divs[0]).hasClass('ng-hide'), true, 'door status should not have danger style, since things should be normal');
+        assert.equal(angular.element(divs[1]).parent().hasClass('ng-hide'), true, 'there should be no alert that the coop is manual mode');
+    });
+
+    it('should initialize properly in open/manual state', function() {
+        var testDoorState = 'open';
+        $scope.mode = 'manual';
+        $scope.doorState = testDoorState;
+        $scope.doorStates = testDoorStates;
+        $scope.doorHealth = $scope.doorStates.ok;
+        $scope.$digest();
+
+        var divs = dirElement[0].querySelectorAll('.label-success');
+        assert.equal(divs.length, 1);
+        assert.equal(divs[0].tagName, 'SPAN');
+        assert.equal(angular.element(divs[0]).hasClass('ng-hide'), false, 'the door status should be ok');
+        assert.equal(divs[0].textContent, testDoorState);
+
+        divs = dirElement[0].querySelectorAll('.label-danger');
+        assert.equal(divs.length, 2);
+        assert.equal(divs[0].tagName, 'SPAN');
+        assert.equal(angular.element(divs[0]).hasClass('ng-hide'), true, 'door status should not have danger style, since things should be normal');
+        assert.equal(angular.element(divs[1]).parent().hasClass('ng-hide'), false, 'there should be no alert that the coop is manual mode');
+        assert(divs[1].textContent.indexOf($scope.mode) != -1, 'text should indicate that coop is in manual mode');
+    });
+
+    function getElementByClassAndText(doc, classToFind, text) {
+        var elems = doc.querySelectorAll(classToFind);
+        var ret = null;
+        for (var i = 0; i < elems.length; i++) {
+            if (elems[i].textContent.indexOf(text) != -1) {
+                ret = elems[i];
+                break;
+            }
+        }
+        return ret;
+    }
+
+    function getOpenButton() {
+        return getElementByClassAndText(dirElement[0], '.btn-primary', 'Open');
+    }
+
+    function getCloseButton() {
+        return getElementByClassAndText(dirElement[0], '.btn-primary', 'Close');
+    }
+
+    it('clicking close button should request controller to close', function(done) {
+        var testDoorState = 'open';
+        $scope.mode = 'auto';
+        $scope.doorState = testDoorState;
+        $scope.doorStates = testDoorStates;
+        $scope.doorHealth = $scope.doorStates.ok;
+
+        $scope.closeDoor = function() {
+            done();
+        };
+
+        $scope.$digest();
+
+        var closeButton = getCloseButton();
+        assert(closeButton !== null, 'should have a close button');
+        assert.equal(closeButton.getAttribute('disabled'), null, 'close button should not be disabled, when door is open');
+
+        var openButton = getOpenButton();
+        assert(openButton !== null, 'should have an open button');
+        assert.equal(openButton.getAttribute('disabled'), 'disabled', 'open button should be disabled, when door is open');
+
+        angular.element(closeButton).triggerHandler('click');
+
+    });
+
+    it('clicking open button should request controller to open', function(done) {
+        var testDoorState = 'closed';
+        $scope.mode = 'auto';
+        $scope.doorState = testDoorState;
+        $scope.doorStates = testDoorStates;
+        $scope.doorHealth = $scope.doorStates.ok;
+
+        $scope.openDoor = function() {
+            done();
+        };
+
+        $scope.$digest();
+
+        var closeButton = getCloseButton();
+        assert(closeButton !== null, 'should have a close button');
+        assert.equal(closeButton.getAttribute('disabled'), 'disabled', 'close button should be disabled, when door is closed');
+
+        var openButton = getOpenButton();
+        assert(openButton !== null, 'should have an open button');
+        assert.equal(openButton.getAttribute('disabled'), null, 'open button should not be disabled, when door is closed');
+
+        angular.element(openButton).triggerHandler('click');
+
+    });
+});
+                    </code></pre>
+                    </section>
+                    <section>
+                        <h2>karma config</h2>
+                        <pre class="stretch"><code class="js hljs">
+module.exports = function(config) {
+  config.set({
+
+    // base path that will be used to resolve all patterns (eg. files, exclude)
+    basePath: '',
+
+    // frameworks to use
+    // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
+    frameworks: ['mocha', 'sinon', 'chai'],
+    
+    // list of files / patterns to load in the browser
+    files: [
+      'client/deps/angular/angular.js',
+      'node_modules/angular-mocks/angular-mocks.js',
+      'node_modules/chai/chai.js',
+      'client/src/js/app.js',
+      'client/src/js/services/*.js',
+      'client/src/js/controllers/*.js',
+      'client/src/js/directives/*.js',
+      { pattern: 'client/src/img/*.*', included: false, served: true },
+      'client/src/views/*.html',
+      'client/test/js/**/*.js'
+    ],
+
+
+    // preprocess matching files before serving them to the browser
+    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
+    preprocessors: {
+        'client/src/views/*.html': ['ng-html2js'],
+        'client/src/**/*.js': ['coverage']
+    },
+    
+    ngHtml2JsPreprocessor: { 
+        stripPrefix: 'client', 
+        moduleName: 'templates' 
+    },
+
+    // test results reporter to use
+    // possible values: 'dots', 'progress'
+    // available reporters: https://npmjs.org/browse/keyword/karma-reporter
+    reporters: ['mocha', 'progress', 'coverage'],
+
+    mochaReporter: {
+        output: 'autowatch' 
+    },
+
+    coverageReporter: {
+      type : 'html',
+      include: 'client/src/**/*.js',
+      dir : 'coverage/',
+      includeAllSources: true
+    },
+
+    // web server port
+    port: 9876,
+
+
+    // enable / disable colors in the output (reporters and logs)
+    colors: true,
+
+
+    // level of logging
+    // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
+    logLevel: config.LOG_INFO,
+
+
+    // enable / disable watching file and executing tests whenever any file changes
+    autoWatch: false,
+
+
+    // start these browsers
+    // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
+    browsers: ['PhantomJS'],
+
+
+    // Continuous Integration mode
+    // if true, Karma captures browsers, runs the tests and exits
+    singleRun: true,
+
+    // Concurrency level
+    // how many browser should be started simultaneous
+    concurrency: Infinity
+  })
+}       
+                    </code></pre>
+                    </section>
+                    <section>
+                        <h2>Running karma tests</h2>
+                        <img src="../img/karma_output.png" style="border: none; max-width: 80%;"/>
+                    </section>
+                    <section>
+                        <h2>Debugging karma tests</h2>
+                        <img src="../img/karma_debug_cmd_line.png" style="border: none;"/>
+                        <img src="../img/karma_debug_inspector.png" style="border: none;"/>
+                    </section>
+                </section>
+                <section>
+                    <h1>Join us!</h1>
+
+                    <a href="https://www.tanium.com/about-us/careers">tanium.com/about-us/careers</a>
+                </section>
+
+            </div>
+
+        </div>
+
+        <script src="lib/js/head.min.js"></script>
+        <script src="js/reveal.js"></script>
+
+        <script src="../06-14-15-lightning-talk/charts.js"></script>
+
+        <script>
+
+            // More info https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+                //parallaxBackgroundImage: 'img/tanium/bg.jpg',
+
+                transition: 'slide',
+
+                chart: {
+                    items: window.TaniumCharts // loaded from /charts.js
+                },
+
+                dependencies: [
+                    { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'plugin/notes/notes.js', async: true },
+                    { src: 'plugin/chartjs/Chart.js' },
+                    { src: 'plugin/chartjs/charted.js' }
+                ]
+            });
+
+        </script>
+
+    </body>
+</html>

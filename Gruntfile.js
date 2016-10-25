@@ -67,8 +67,6 @@ module.exports = function(grunt) {
                 options: {
                     mask: '*.spec.js',
                     coverage: true
-                        /*,
-                                            istanbulOptions: ['--include-all-sources']*/
                 },
                 check: {
                     lines: 80,
