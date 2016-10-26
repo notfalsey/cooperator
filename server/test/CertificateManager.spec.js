@@ -21,10 +21,10 @@ describe('CertificateManager', () => {
         return certMgr.isKeyPairInstalled().catch((err) => {
             assert(err);
             return certMgr.verifyCertsDir().then(() => {
-                	return certMgr.generateKeyPair('localhost', props.getHttpCertPath(), props.getHttpKeyPath());
-            	}).then(() => {
-                	return certMgr.isKeyPairInstalled();
-                });
+                return certMgr.generateKeyPair('localhost', props.getHttpCertPath(), props.getHttpKeyPath());
+            }).then(() => {
+                return certMgr.isKeyPairInstalled();
+            });
         });
     });
 });

@@ -10,7 +10,7 @@ function setup(app, url, controller) {
         }, 'Sending response');
     }
 
-    app.put(url + '/reset', function(req, res) {
+    app.put(url + '/reset', (req, res) => {
         log.trace({
             req: req
         }, 'Entering put ' + url + '/reset');
@@ -30,7 +30,7 @@ function setup(app, url, controller) {
         });
     });
 
-    app.get(url + '/temp', function(req, res) {
+    app.get(url + '/temp', (req, res) => {
         log.trace({
             req: req
         }, 'Entering get ' + url + '/temp');
@@ -42,7 +42,7 @@ function setup(app, url, controller) {
         end(res);
     });
 
-    app.get(url + '/light', function(req, res) {
+    app.get(url + '/light', (req, res) => {
         log.trace({
             req: req
         }, 'Entering get ' + url + '/light');
@@ -54,7 +54,7 @@ function setup(app, url, controller) {
         end(res);
     });
 
-    app.get(url + '/uptime', function(req, res) {
+    app.get(url + '/uptime', (req, res) => {
         log.trace({
             req: req
         }, 'Entering get ' + url + '/uptime');
@@ -73,7 +73,7 @@ function setup(app, url, controller) {
         };
     }
 
-    app.get(url + '/closetime', function(req, res) {
+    app.get(url + '/closetime', (req, res) => {
         log.trace({
             req: req
         }, 'Entering get ' + url + '/closetime');
@@ -82,7 +82,7 @@ function setup(app, url, controller) {
         end(res);
     });
 
-    app.get(url + '/opentime', function(req, res) {
+    app.get(url + '/opentime', (req, res) => {
         log.trace({
             req: req
         }, 'Entering get ' + url + '/opentime');
@@ -91,7 +91,7 @@ function setup(app, url, controller) {
         end(res);
     });
 
-    app.get(url + '/health', function(req, res) {
+    app.get(url + '/health', (req, res) => {
         log.trace({
             req: req
         }, 'Entering get ' + url + '/rerrors');
@@ -108,7 +108,7 @@ function setup(app, url, controller) {
     });
 
     app.route(url + '/mode')
-        .get(function(req, res) {
+        .get((req, res) => {
             log.trace({
                 req: req
             }, 'Entering get ' + url + '/mode');
@@ -126,7 +126,7 @@ function setup(app, url, controller) {
         });
 
     app.route(url + '/door')
-        .get(function(req, res) {
+        .get((req, res) => {
             log.trace({
                 req: req
             }, 'Entering get ' + url + '/door');
@@ -144,7 +144,7 @@ function setup(app, url, controller) {
             res.status(200).json(doorString);
             end(res);
         })
-        .put(function(req, res) {
+        .put((req, res) => {
             log.trace({
                 req: req,
                 dir: req.body.dir

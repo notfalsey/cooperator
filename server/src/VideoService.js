@@ -75,6 +75,8 @@ class VideoService {
         log.trace('Entering VideoService:pipeRequest');
         try {
             var req = http.request(options, (res) => {
+                console.log('res: ', res);
+                console.log('callerRes: ', callerRes);
                 res.pipe(callerRes);
             });
             req.on('error', (err) => {

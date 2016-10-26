@@ -186,7 +186,7 @@ class CoopApp {
         return new Promise((resolve, reject) => {
             if (this.httpsServer) {
                 this.httpsServer.close(() => {
-                    var msg = 'HTTP server stopped.'
+                    var msg = 'HTTP server stopped.';
                     log.info(msg);
                     console.warn(msg);
                     resolve();

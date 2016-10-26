@@ -91,5 +91,21 @@ describe('VideoService', () => {
     });
 
 
+    /*it.only('should get snapshot from video service', (done) => {
+        nock(url)
+            .get('/snapshot.cgi?user=' + config.cameraUser + '&pwd=' + config.cameraPassword)
+            .reply(200);
+
+
+        var res = {
+            status: function(status) {
+                this.status = status;
+            },
+            end: function() {
+                done();
+            }
+        };
+        return videoService.get(res);
+    });*/
 
 });

@@ -8,7 +8,8 @@ var assert = require('assert'),
     sinon = require('sinon-as-promised')(Promise),
     coop = require('../../src/routes/coop');
 
-describe('routes/coop', () => {
+describe('routes/coop', function() {
+    this.timeout(0);
     var baseUri = '/coop';
     var app;
     var mockCoopController;
@@ -112,7 +113,8 @@ describe('routes/coop', () => {
                 });
         });
 
-        it('put /door should return 422 when invalid direction is sent', () => {
+        it('put /door should return 422 when invalid direction is sent', function() {
+            this.timeout(0);
             return request(app)
                 .put(baseUri + '/door')
                 .set('Accept', 'application/json')
