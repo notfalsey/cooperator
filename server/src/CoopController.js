@@ -246,8 +246,10 @@ class CoopController {
                         log.trace('Reading override mode');
                         return this.sendCommand(wire, this.commands.readMode, []).then((mode) => {
                             this.state.mode = mode;
-                            if(this.state.mode != this.lastMode) {
-                                log.info({mode: this.state.mode}, 'Door mode changed');
+                            if (this.state.mode != this.lastMode) {
+                                log.info({
+                                    mode: this.state.mode
+                                }, 'Door mode changed');
                                 this.lastMode = this.state.mode;
                             }
                             return new Promise((resolve, reject) => {
