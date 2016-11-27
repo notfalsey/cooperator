@@ -42,6 +42,7 @@ class CoopController {
         this.activeDoorCommand = -1;
         this.doorCommandExpiration = null;
         this.lastNonErrorDoorState = null;
+        this.lastMode = null;
 
         this.doorStates = {
             open: 0,
@@ -245,6 +246,10 @@ class CoopController {
                         log.trace('Reading override mode');
                         return this.sendCommand(wire, this.commands.readMode, []).then((mode) => {
                             this.state.mode = mode;
+                            if(this.state.mode != this.lastMode) {
+                                log.info({mode: this.state.mode}, 'Door mode changed');
+                                this.lastMode = this.state.mode;
+                            }
                             return new Promise((resolve, reject) => {
                                 setTimeout(resolve, delayBetween);
                             });
@@ -280,7 +285,7 @@ class CoopController {
                                 }
                                 // always keep going even if error
                                 setTimeout(callback, delayBetween);
-                            }); 
+                            });
                         },*/
                     }).then(() => {
                         log.trace('checking door');
@@ -404,21 +409,23 @@ class CoopController {
         if (currentMins <= this.getOpeningTime()) {
             // today sunrise
             ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
+            ret.setTime(ret.getTime() + this.sunriseDeltaMinutes * 60 * 1000);
             log.trace({
                 ret: ret
-            }, 'Returning from getDoorCommandExpiration with todays sunrise');
+            }, 'Returning from getDoorCommandExpiration with todays opening time');
             return ret;
         } else if (currentMins > this.getOpeningTime() && currentMins < this.getClosingTime()) {
             // today sunset
             ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunset.hour, sunset.minute);
+            ret.setTime(ret.getTime() + this.sunsetDeltaMinutes * 60 * 1000);
             log.trace({
                 ret: ret
-            }, 'Returning from getDoorCommandExpiration with todays sunset');
+            }, 'Returning from getDoorCommandExpiration with todays closing time');
             return ret;
         }
-        // else tomorrow sunrise
+        // else tomorrow opening time
         var todaySunrise = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
-        ret = new Date(todaySunrise.getTime() + 24 * 60 * 60 * 1000);
+        ret = new Date(todaySunrise.getTime() + (this.sunsetDeltaMinutes * 60 * 1000) + (24 * 60 * 60 * 1000));
         log.trace({
             ret: ret
         }, 'Returning from getDoorCommandExpiration with tomorrows sunrise');
