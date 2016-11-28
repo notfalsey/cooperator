@@ -207,20 +207,44 @@ class CoopController {
                         log.trace('Reading door state');
                         return this.sendCommand(wire, this.commands.readDoor, []).then((door) => {
                             // first lets compare current state against previous state and send a notification of state change if necessary
-                            if (this.enableNotify === true && this.lastNonErrorDoorState === this.doorStates.transitioning) {
+                            if (this.lastNonErrorDoorState === this.doorStates.transitioning) {
                                 if (door === this.doorStates.open) {
                                     log.info('Door is now open');
-                                    this.notifyService.notify('Door opened', 'Its a brand new day!')
-                                        .then(() => {
-                                            log.info('Notification sent');
-                                        }).catch((err) => {
-                                            log.error({
-                                                err: err
-                                            }, 'Error sending notification');
-                                        });
+                                    if (this.enableNotify === true) {
+                                        this.notifyService.notify('Door opened', 'Its a brand new day!')
+                                            .then(() => {
+                                                log.info('Notification sent');
+                                            }).catch((err) => {
+                                                log.error({
+                                                    err: err
+                                                }, 'Error sending notification');
+                                            });
+                                    }
                                 } else if (door === this.doorStates.closed) {
                                     log.info('Door is now closed');
-                                    this.notifyService.notify('Door closed', 'Safe and sound.')
+                                    if (this.enableNotify === true) {
+                                        this.notifyService.notify('Door closed', 'Safe and sound.')
+                                            .then(() => {
+                                                log.info('Notification sent');
+                                            }).catch((err) => {
+                                                log.error({
+                                                    err: err
+                                                }, 'Error sending notification');
+                                            });
+                                    }
+                                } else if (door === this.doorStates.transitioning) {
+                                    log.info('Door is transitioning');
+                                } else {
+                                    log.error('Invalid door state received');
+                                }
+                            }
+                            if (door !== this.doorStates.open && door !== this.doorStates.closed) {
+                                if (door === this.doorStates.transitioning) {
+                                    log.info('Door is transitioning');
+                                    this.lastNonErrorDoorState = this.state.door = door;
+                                } else {
+                                    log.error('Door is in invalid state');
+                                    this.notifyService.notify('Door error', 'Invalid state returned.')
                                         .then(() => {
                                             log.info('Notification sent');
                                         }).catch((err) => {
@@ -229,8 +253,9 @@ class CoopController {
                                             }, 'Error sending notification');
                                         });
                                 }
+                            } else {
+                                this.lastNonErrorDoorState = this.state.door = door;
                             }
-                            this.lastNonErrorDoorState = this.state.door = door;
                             return new Promise((resolve, reject) => {
                                 setTimeout(resolve, delayBetween);
                             });

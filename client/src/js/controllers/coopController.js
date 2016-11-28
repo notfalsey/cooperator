@@ -29,6 +29,7 @@ angular.module(appName)
             $scope.resetActive = false;
             $scope.closeActive = false;
             $scope.openActive = false;
+            $scope.Math = $window.Math;
 
             var computeNextOpMessage = function() {
                 if ($scope.openTime !== '?' && $scope.closeTime !== '?' && $scope.doorState !== 'unknown') {

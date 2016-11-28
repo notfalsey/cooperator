@@ -44,7 +44,9 @@
                     </div>
                     <div class="row">
                         <div class="col-xs-4" style="font-weight: bold;">Longest uptime:</div>
-                        <div class="col-xs-8">{{health.longestUptime}}</div>
+                        <div class="col-xs-8">{{Math.floor(health.longestUptime / (24*3600*1000))}} days {{Math.floor(health.longestUptime / (3600*1000))%24}} hrs {{Math.floor(health.longestUptime / (60*1000))%60}} mins {{Math.floor(health.longestUptime / (1000))%60}} secs
+                            ({{health.longestUptime}})
+                        </div>
                     </div>
                 </div>
             </div>
