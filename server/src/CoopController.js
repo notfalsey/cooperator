@@ -186,7 +186,7 @@ class CoopController {
                         if (uptime > this.longestUptime) {
                             this.longestUptime = uptime;
                         }
-                        if (uptime < this.state.uptime && this.state.uptime < (Math.pow(2, 32) - 10000)) {
+                        if (uptime < this.state.uptime && uptime > 0 && this.state.uptime < (Math.pow(2, 32) - 10000)) {
                             this.autoResetCount++;
                             log.error({
                                 uptime: uptime,

@@ -51,7 +51,11 @@ class WeatherService {
                             resData: resData
                         }, 'Received data from weather service');
                         if (resData) {
-                            resolve(JSON.parse(resData));
+                            try {
+                                resolve(JSON.parse(resData));
+                            } catch(e) {
+                                reject(e);
+                            }
                         } else {
                             reject(new Error('No response data received'));
                         }
