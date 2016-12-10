@@ -1,3 +1,5 @@
+'use strict';
+
 var assert = require('assert'),
     Promise = require('bluebird'),
     sinon = require('sinon-as-promised')(Promise),
@@ -61,17 +63,15 @@ describe('CoopController', () => {
     });
 
     it('closeDoor should send close door command successfully', () => {
-        var mockI2c = function() {
-            return {
-                writeBytes: function(command, args) {
-                    return Promise.resolve();
-                },
-                read: function(numBytes) {
-                    var response = [0, 0, 0, 2];
-                    return Promise.resolve(response);
-                }
-            };
-        };
+        class mockI2c {
+            writeBytes(command, args, callback) {
+                callback();
+            }
+            read(numBytes, callback) {
+                var response = [0, 0, 0, 2];
+                callback(null, response);
+            }
+        }
         var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
         return coopController.closeDoor().then((data) => {
             assert.equal(data, 2);
@@ -80,17 +80,15 @@ describe('CoopController', () => {
     });
 
     it('openDoor should send open door command successfully', () => {
-        var mockI2c = function() {
-            return {
-                writeBytes: function(command, args) {
-                    return Promise.resolve();
-                },
-                read: function(numBytes) {
-                    var response = [0, 0, 0, 0];
-                    return Promise.resolve(response);
-                }
-            };
-        };
+        class mockI2c {
+            writeBytes(command, args, callback) {
+                callback();
+            }
+            read(numBytes, callback) {
+                var response = [0, 0, 0, 0];
+                callback(null, response);
+            }
+        }
         var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
         return coopController.openDoor().then((data) => {
             assert.equal(data, 0);
@@ -100,18 +98,14 @@ describe('CoopController', () => {
 
 
     it('should record read errors', () => {
-        //var readStub = sinon.stub();
-        //readStub.rejects(new Error('i2c bus error'));
-        var mockI2c = function() {
-            return {
-                writeBytes: function(command, args) {
-                    return Promise.resolve();
-                },
-                read: function(numBytes) {
-                    return Promise.reject(new Error('i2c bus error'));
-                }
-            };
-        };
+        class mockI2c {
+            writeBytes(command, args, callback) {
+                callback();
+            }
+            read(numBytes, callback) {
+                callback(new Error('i2c bus error'));
+            }
+        }
         var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
         return coopController.openDoor().then(() => {
             assert.fail('Expected open door command to return error');
@@ -123,17 +117,15 @@ describe('CoopController', () => {
     });
 
     it('should send echo command successfully', () => {
-        var mockI2c = function() {
-            return {
-                writeBytes: function(command, args) {
-                    return Promise.resolve();
-                },
-                read: function(numBytes) {
-                    var response = [0, 0, 0, 1];
-                    return Promise.resolve(response);
-                }
-            };
-        };
+        class mockI2c {
+            writeBytes(command, args, callback) {
+                callback();
+            }
+            read(numBytes, callback) {
+                var response = [0, 0, 0, 1];
+                callback(null, response);
+            }
+        }
         var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
         return coopController.echo('test').then((data) => {
             assert.equal(data, 1);
@@ -141,17 +133,15 @@ describe('CoopController', () => {
     });
 
     it('should send reset command successfully', () => {
-        var mockI2c = function() {
-            return {
-                writeBytes: function(command, args) {
-                    return Promise.resolve();
-                },
-                read: function(numBytes) {
-                    var response = [0, 0, 0, 5];
-                    return Promise.resolve(response);
-                }
-            };
-        };
+        class mockI2c {
+            writeBytes(command, args, callback) {
+                callback();
+            }
+            read(numBytes, callback) {
+                var response = [0, 0, 0, 5];
+                callback(null, response);
+            }
+        }
         var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
         return coopController.reset().then((data) => {
             assert.equal(data, 5);
@@ -159,17 +149,15 @@ describe('CoopController', () => {
     });
 
     it('should send auto door command successfully', () => {
-        var mockI2c = function() {
-            return {
-                writeBytes: function(command, args) {
-                    return Promise.resolve();
-                },
-                read: function(numBytes) {
-                    var response = [0, 0, 0, 7];
-                    return Promise.resolve(response);
-                }
-            };
-        };
+        class mockI2c {
+            writeBytes(command, args, callback) {
+                callback();
+            }
+            read(numBytes, callback) {
+                var response = [0, 0, 0, 7];
+                callback(null, response);
+            }
+        }
         var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
         return coopController.autoDoor().then((data) => {
             assert.equal(data, 7);

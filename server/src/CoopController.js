@@ -77,57 +77,61 @@ class CoopController {
     }
 
     sendCommand(wire, command, args) {
-        log.trace('Entering sendCommand');
+        log.trace({
+            command: command,
+            args: args
+        }, 'Entering sendCommand');
         if (!this.messageInProgress) {
             this.messageInProgress = true;
             log.debug({
                 command: command,
                 args: args
             }, 'Sending i2C command');
-
-            return wire.writeBytes(command, args)
-                .then(() => {
-                    this.lastSuccessfulWrite = new Date();
-                    return new Promise((resolve, reject) => {
-                        setTimeout(resolve, 100);
-                    });
-                })
-                .then(() => {
-                    return wire.read(4)
-                        .then((readBytes) => {
-                            this.messageInProgress = false;
-                            this.lastSuccessfulRead = new Date();
-                            var reading = (readBytes[0] << 24) + (readBytes[1] << 16) + (readBytes[2] << 8) + readBytes[3];
-                            log.debug({
-                                command: command,
-                                args: args,
-                                readBytes: readBytes,
-                                reading: reading
-                            }, 'Read data from i2c bus');
-                            return reading;
-                        })
-                        .catch((err) => {
-                            this.lastError = new Date();
-                            this.readErrorCount++;
-                            log.error({
-                                command: command,
-                                args: args,
-                                err: err
-                            }, 'Error reading data from i2c bus');
-                            throw err;
-                        });
-                })
-                .catch((err) => {
-                    this.lastError = new Date();
-                    this.writeErrorCount++;
-                    this.messageInProgress = false;
-                    log.error({
-                        command: command,
-                        args: args,
-                        err: err
-                    }, 'Error writing data to i2c bus');
-                    throw err;
+            return new Promise((resolve, reject) => {
+                wire.writeBytes(command, args, (err) => {
+                    if (err) {
+                        this.messageInProgress = false;
+                        this.lastError = new Date();
+                        this.writeErrorCount++;
+                        log.error({
+                            command: command,
+                            args: args,
+                            err: err
+                        }, 'Error writing data to i2c bus');
+                        reject(err);
+                    } else {
+                        log.debug({command: command, args: args}, 'Wrote data to i2c bus successfully');
+                        this.lastSuccessfulWrite = new Date();
+                        // need to delay nefore reading or it causes errors (probably due to long distance)
+                        setTimeout(() => {
+                            wire.read(4, (err, readBytes) => {
+                                if (err) {
+                                    this.messageInProgress = false;
+                                    this.lastError = new Date();
+                                    this.readErrorCount++;
+                                    log.error({
+                                        command: command,
+                                        args: args,
+                                        err: err
+                                    }, 'Error reading data from i2c bus');
+                                    reject(err);
+                                } else {
+                                    this.messageInProgress = false;
+                                    this.lastSuccessfulRead = new Date();
+                                    var reading = (readBytes[0] << 24) + (readBytes[1] << 16) + (readBytes[2] << 8) + readBytes[3];
+                                    log.debug({
+                                        command: command,
+                                        args: args,
+                                        readBytes: readBytes,
+                                        reading: reading
+                                    }, 'Read data from i2c bus');
+                                    resolve(reading);
+                                }
+                            });
+                        }, 50);
+                    }
                 });
+            });
         } else {
             var msg = 'Error: i2c message in progress';
             log.error({
@@ -288,32 +292,6 @@ class CoopController {
                                 setTimeout(resolve, delayBetween);
                             });
                         });
-                        /*
-                        (callback) => {
-                            log.trace('Reading light');
-                            this.sendCommand(wire, this.commands.readLight, [], (err, light) => {
-                                if (err) {
-                                    log.error('Error reading light');
-                                    this.state.light = -1;
-                                } else {
-                                    this.state.light = light;
-                                }
-                                // always keep going even if error
-                                setTimeout(callback, delayBetween);
-                            });
-                        },
-                        (callback) => {
-                            log.trace('Updating temperature');
-                            this.sendCommand(wire, this.commands.readTemp, [], function(err, temp) {
-                                if(err) {
-                                    log.error('Error reading temp');
-                                } else {
-                                    this.state.temp = temp;
-                                }
-                                // always keep going even if error
-                                setTimeout(callback, delayBetween);
-                            });
-                        },*/
                     }).then(() => {
                         log.trace('checking door');
                         this.checkDoor(wire, this.state.door).then(() => {
@@ -344,7 +322,10 @@ class CoopController {
     }
 
     requestCommand(command, args) {
-        log.trace('Entering requestCommand');
+        log.trace({
+            command: command,
+            args: args
+        }, 'Entering requestCommand');
         return new Promise((resolve, reject) => {
             this.commandQueue.push({
                 command: command,
@@ -460,7 +441,9 @@ class CoopController {
     }
 
     checkDoor(wire, state) {
-        log.trace('Entering checkCoop');
+        log.trace({
+            state: state
+        }, 'Entering checkCoop');
         var currentTime = new Date();
         // check if last manual door command needs to expire
         if (this.activeDoorCommand !== -1 && currentTime.getTime() >= this.doorCommandExpiration.getTime()) {

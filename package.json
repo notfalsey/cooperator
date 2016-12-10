@@ -17,7 +17,7 @@
     "passport-google-oauth20": "^1.0.0"
   },
   "optionalDependencies": {
-    "i2c": "0.2.1"
+    "i2c": "0.2.3"
   },
   "scripts": {
     "start": "node server/src/Server.js",
@@ -28,6 +28,7 @@
     "bower": "^1.7.7",
     "chai": "^3.5.0",
     "grunt": "^1.0.1",
+    "grunt-contrib-compress": "^1.3.0",
     "grunt-contrib-jshint": "^1.0.0",
     "grunt-exec": "^1.0.1",
     "grunt-jsbeautifier": "^0.2.13",

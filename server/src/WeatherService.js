@@ -53,7 +53,7 @@ class WeatherService {
                         if (resData) {
                             try {
                                 resolve(JSON.parse(resData));
-                            } catch(e) {
+                            } catch (e) {
                                 reject(e);
                             }
                         } else {

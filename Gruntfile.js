@@ -1,4 +1,5 @@
 module.exports = function(grunt) {
+    grunt.loadNpmTasks('grunt-contrib-compress');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-exec');
     grunt.loadNpmTasks('grunt-jsbeautifier');
@@ -73,12 +74,25 @@ module.exports = function(grunt) {
                     statements: 80
                 }
             }
+        },
+        compress: {
+            app: {
+                options: {
+                    archive: 'bin/coopapp.tgz',
+                    mode: 'tgz'
+                },
+                files: [{
+                    expand: true,
+                    src: ['server/src/**', 'node_modules/**', 'client/src/**']
+                }]
+            }
         }
     });
 
 
     grunt.registerTask('serverTest', 'mocha_istanbul:server');
     grunt.registerTask('clientTest', 'karma:dev');
+    grunt.registerTask('package', 'compress:app');
     grunt.registerTask('default', ['exec:bower', 'jshint', 'jsbeautifier:check', 'karma:dev', 'mocha_istanbul:server']);
     grunt.registerTask('bfy', ['jsbeautifier:beautify']);
 };

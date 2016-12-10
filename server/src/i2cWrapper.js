@@ -18,7 +18,7 @@ if (/^linux/.test(process.platform) === false) {
     // mock i2c
     ret = i2cMock;
 } else {
-    ret = Promise.promisifyAll(require('i2c'));
+    ret = require('i2c');
 }
 
 module.exports = ret;

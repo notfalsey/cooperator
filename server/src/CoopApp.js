@@ -33,7 +33,7 @@ function configure(app, config) {
         }
     }));
 
-    app.set('trust proxy', 1); // trust first proxy 
+    app.set('trust proxy', 1); // trust first proxy
 
     if (!config.hasOwnProperty('doAuth') || config.doAuth === true) {
         // Passport session setup.
@@ -108,7 +108,16 @@ function configure(app, config) {
 
 
         app.get('/login', function(req, res) {
-            res.end('<a href="/auth/google">Login with Google</a>');
+            res.end('<html><body><br/><br/><form action="/auth/google" >' +
+                '<input type="submit" value="Login" style="' +
+                    'font-size: 50;' +
+                    'color: white;' +
+                    'background: #5cb85c;' +
+                    'border-radius: .25rem;' +
+                    'border: 1px solid transparent;' +
+                    'padding: .5rem 1rem;' +
+                '">' +
+            '</form></body></html>');
         });
 
         app.get('/logout', function(req, res) {
