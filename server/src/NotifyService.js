@@ -1,29 +1,72 @@
 'use strict';
 
-var log = require('./logger.js')();
+var Promise = require('bluebird'),
+    http = require('http'),
+    querystring = require('querystring'),
+    log = require('./logger.js')();
 
 class NotifyService {
     constructor(config) {
-        this.recipients = config.mailRecipients;
-        this.from = config.mailFrom;
-        this.mailgun = require('mailgun-js')({
-            apiKey: config.mailApiKey,
-            domain: config.mailDomain
+        this.recipients = config.textRecipients;
+        this.textHost = config.textHost;
+    }
+
+    notify(message, number) {
+        log.trace({
+            message: message,
+            number: number
+        }, 'Sending text notification');
+
+        return new Promise((resolve, reject) => {
+            var postData = querystring.stringify({
+                number: number,
+                message: message
+            });
+
+            var parms = {
+                host: this.textHost,
+                port: 80,
+                path: '/text',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Length': Buffer.byteLength(postData)
+                }
+            };
+
+            var req = http.request(parms, (resp) => {
+                resp.on('data', (data) => {});
+                resp.on('end', () => {
+                    log.info({
+                        message: message,
+                        number: number
+                    }, 'Sent notification successfully');
+                    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+                        resolve();
+                    } else {
+                        reject(new Error('Notification failed.'));
+                    }
+                });
+            });
+
+            req.on('error', (err) => {
+                log.error({
+                    err: err
+                }, 'Error received when sending notification');
+                reject(err);
+            });
+
+            req.write(postData);
+            req.end();
         });
     }
 
-    notify(subject, message) {
-        var data = {
-            from: this.from,
-            to: this.recipients,
-            subject: subject,
-            text: message
-        };
-        log.trace({
-            subject: subject,
-            message: message
-        }, 'Sending email notification');
-        return this.mailgun.messages().send(data);
+    notifyAll(message) {
+        var notifications = [];
+        for (var r of this.recipients) {
+            notifications.push(this.notify(message, r));
+        }
+        return Promise.all(notifications);
     }
 }
 

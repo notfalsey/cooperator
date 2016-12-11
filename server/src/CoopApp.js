@@ -110,14 +110,14 @@ function configure(app, config) {
         app.get('/login', function(req, res) {
             res.end('<html><body><br/><br/><form action="/auth/google" >' +
                 '<input type="submit" value="Login" style="' +
-                    'font-size: 50;' +
-                    'color: white;' +
-                    'background: #5cb85c;' +
-                    'border-radius: .25rem;' +
-                    'border: 1px solid transparent;' +
-                    'padding: .5rem 1rem;' +
+                'font-size: 50;' +
+                'color: white;' +
+                'background: #5cb85c;' +
+                'border-radius: .25rem;' +
+                'border: 1px solid transparent;' +
+                'padding: .5rem 1rem;' +
                 '">' +
-            '</form></body></html>');
+                '</form></body></html>');
         });
 
         app.get('/logout', function(req, res) {

@@ -100,7 +100,10 @@ class CoopController {
                         }, 'Error writing data to i2c bus');
                         reject(err);
                     } else {
-                        log.debug({command: command, args: args}, 'Wrote data to i2c bus successfully');
+                        log.debug({
+                            command: command,
+                            args: args
+                        }, 'Wrote data to i2c bus successfully');
                         this.lastSuccessfulWrite = new Date();
                         // need to delay nefore reading or it causes errors (probably due to long distance)
                         setTimeout(() => {
@@ -215,7 +218,7 @@ class CoopController {
                                 if (door === this.doorStates.open) {
                                     log.info('Door is now open');
                                     if (this.enableNotify === true) {
-                                        this.notifyService.notify('Door opened', 'Its a brand new day!')
+                                        this.notifyService.notify('Coop door opened.')
                                             .then(() => {
                                                 log.info('Notification sent');
                                             }).catch((err) => {
@@ -227,7 +230,7 @@ class CoopController {
                                 } else if (door === this.doorStates.closed) {
                                     log.info('Door is now closed');
                                     if (this.enableNotify === true) {
-                                        this.notifyService.notify('Door closed', 'Safe and sound.')
+                                        this.notifyService.notify('Coop door closed.')
                                             .then(() => {
                                                 log.info('Notification sent');
                                             }).catch((err) => {
@@ -248,7 +251,7 @@ class CoopController {
                                     this.lastNonErrorDoorState = this.state.door = door;
                                 } else {
                                     log.error('Door is in invalid state');
-                                    this.notifyService.notify('Door error', 'Invalid state returned.')
+                                    this.notifyService.notify('Coop door error.')
                                         .then(() => {
                                             log.info('Notification sent');
                                         }).catch((err) => {
