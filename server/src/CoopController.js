@@ -294,7 +294,7 @@ class CoopController {
                         });
                     }).then(() => {
                         log.trace('checking door');
-                        this.checkDoor(wire, this.state.door).then(() => {
+                        return this.checkDoor(wire, this.state.door).then(() => {
                             return new Promise((resolve, reject) => {
                                 setTimeout(resolve, delayBetween);
                             });
@@ -305,12 +305,16 @@ class CoopController {
                                 setTimeout(resolve, delayBetween);
                             });
                         });
+                    }).then(() => {
+                        log.trace('sync finished successfully');
+                        setTimeout(callback, 1000);
+                    }).catch((err) => {
+                        log.error({
+                            err: err
+                        }, 'sync finished with error');
+                        // always keep going even if error
+                        setTimeout(callback, 1000);
                     });
-                    log.trace({
-                        err: err
-                    }, 'sync finished');
-                    // always keep going even if error
-                    setTimeout(callback, 1000);
                 });
             },
             (err) => {
