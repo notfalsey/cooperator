@@ -218,7 +218,7 @@ class CoopController {
                                 if (door === this.doorStates.open) {
                                     log.info('Door is now open');
                                     if (this.enableNotify === true) {
-                                        this.notifyService.notify('Coop door opened.')
+                                        this.notifyService.notifyAll('Coop door opened.')
                                             .then(() => {
                                                 log.info('Notification sent');
                                             }).catch((err) => {
@@ -230,7 +230,7 @@ class CoopController {
                                 } else if (door === this.doorStates.closed) {
                                     log.info('Door is now closed');
                                     if (this.enableNotify === true) {
-                                        this.notifyService.notify('Coop door closed.')
+                                        this.notifyService.notifyAll('Coop door closed.')
                                             .then(() => {
                                                 log.info('Notification sent');
                                             }).catch((err) => {
@@ -251,7 +251,7 @@ class CoopController {
                                     this.lastNonErrorDoorState = this.state.door = door;
                                 } else {
                                     log.error('Door is in invalid state');
-                                    this.notifyService.notify('Coop door error.')
+                                    this.notifyService.notifyAll('Coop door error.')
                                         .then(() => {
                                             log.info('Notification sent');
                                         }).catch((err) => {
