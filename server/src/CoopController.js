@@ -1,7 +1,6 @@
 'use strict';
 
 var _ = require('lodash'),
-    async = require('async'),
     Promise = require('bluebird'),
     i2c = require('./i2cWrapper.js'),
     log = require('./logger.js')();
@@ -37,6 +36,7 @@ class CoopController {
         this.autoResetCount = 0;
         this.lastSuccessfulRead = -1;
         this.lastSuccessfulWrite = -1;
+        this.lastSuccessfulCheckDoor = new Date();
         this.lastError = -1;
         this.longestUptime = 0;
         this.timeToTransition = 15000;
@@ -74,7 +74,7 @@ class CoopController {
             readMode: 9
         };
 
-        this.syncLoop();
+        this.start();
     }
 
     sendCommand(wire, command, args) {
@@ -146,10 +146,153 @@ class CoopController {
         }
     }
 
+    sendReadDoorCommand(wire) {
+        log.trace('Entering sendReadDoorCommand');
+        return this.sendCommand(wire, this.commands.readDoor, []).then((door) => {
+            // first lets compare current state against previous state and send a notification of state change if necessary
+            if (this.lastNonErrorDoorState === this.doorStates.transitioning) {
+                if (door === this.doorStates.open) {
+                    log.info('Door is now open');
+                    if (this.enableNotify === true) {
+                        this.notifyService.notifyAll('Coop door opened.')
+                            .then(() => {
+                                log.info('Notification sent');
+                            }).catch((err) => {
+                                log.error({
+                                    err: err
+                                }, 'Error sending notification');
+                            });
+                    }
+                } else if (door === this.doorStates.closed) {
+                    log.info('Door is now closed');
+                    if (this.enableNotify === true) {
+                        this.notifyService.notifyAll('Coop door closed.')
+                            .then(() => {
+                                log.info('Notification sent');
+                            }).catch((err) => {
+                                log.error({
+                                    err: err
+                                }, 'Error sending notification');
+                            });
+                    }
+                } else if (door === this.doorStates.transitioning) {
+                    log.info('Door is transitioning');
+                } else {
+                    log.error('Invalid door state received');
+                }
+            }
+            if (door !== this.doorStates.open && door !== this.doorStates.closed) {
+                if (door === this.doorStates.transitioning) {
+                    log.info('Door is transitioning');
+                    this.lastNonErrorDoorState = this.state.door = door;
+                } else {
+                    log.error('Door is in invalid state');
+                    this.notifyService.notifyAll('Coop door error.')
+                        .then(() => {
+                            log.info('Notification sent');
+                        }).catch((err) => {
+                            log.error({
+                                err: err
+                            }, 'Error sending notification');
+                        });
+                }
+            } else {
+                this.lastNonErrorDoorState = this.state.door = door;
+            }
+        });
+    }
+
+    sendReadOverrideCommand(wire) {
+        log.trace('Entering sendReadOverrideCommand');
+        return this.sendCommand(wire, this.commands.readMode, []).then((mode) => {
+            this.state.mode = mode;
+            if (this.state.mode != this.lastMode) {
+                log.info({
+                    mode: this.state.mode
+                }, 'Door mode changed');
+                this.lastMode = this.state.mode;
+            }
+        });
+    }
+
+    sendReadUptimeCommand(wire) {
+        log.trace('Entering sendReadUptimeCommand');
+        return this.sendCommand(wire, this.commands.readUptime, []).then((uptime) => {
+            if (uptime > this.longestUptime) {
+                this.longestUptime = uptime;
+            }
+            if (uptime < this.state.uptime && uptime > 0 && this.state.uptime < (Math.pow(2, 32) - 10000)) {
+                this.autoResetCount++;
+                log.error({
+                    uptime: uptime,
+                    lastUptime: this.state.uptime
+                }, 'Coop controller reset');
+            }
+            this.state.uptime = uptime;
+        });
+    }
+
+    sendManualCommand(wire, command) {
+        return this.sendCommand(wire, command.command, command.args).then((data) => {
+            if (command.command === this.commands.reset) {
+                this.state.uptime = -1;
+            }
+            command.resolve(data);
+        }).catch((err) => {
+            log.error({
+                err: err
+            }, 'Error sending command');
+            command.reject(err);
+        });
+    }
+
     // update all of the readable state from the coop
-    syncLoop() {
-        log.trace('Entering updateState');
+    sync(wire) {
+        log.trace({
+            commandLength: this.commandQueue.length
+        }, 'Servicing queued commands');
         var delayBetween = 100;
+        var currentCommandQueue = _.clone(this.commandQueue);
+        this.commandQueue = [];
+        var manualCommandPromises = [];
+        for (var command of currentCommandQueue) {
+            manualCommandPromises.push(this.sendManualCommand(wire, command).delay(delayBetween));
+        }
+
+        return Promise.all(manualCommandPromises).then(() => {
+            // now start repeating automatic command loop
+            log.trace('Reading uptime');
+            return this.sendReadUptimeCommand(wire).catch((err) => {
+                log.error('Error reading uptime');
+                // always keep going even if error
+            }).delay(delayBetween).then(() => {
+                log.trace('Reading door state');
+                return this.sendReadDoorCommand(wire).catch((err) => {
+                    log.error('Error reading door');
+                    this.state.door = -1;
+                    // always keep going even if error
+                });
+            }).delay(delayBetween).then(() => {
+                log.trace('Reading override mode');
+                return this.sendReadOverrideCommand(wire).catch((err) => {
+                    log.error('Error reading override mode');
+                    this.state.mode = -1;
+                    // always keep going even if error
+                });
+            }).delay(delayBetween).then(() => {
+                log.trace('checking door');
+                return this.checkDoor(wire, this.state.door).then(() => {
+                    this.lastSuccessfulCheckDoor = new Date();
+                }).catch((err) => {
+                    log.error('Error checking door');
+                    // always keep going even if error
+                });
+            });
+        });
+    }
+
+    start() {
+        log.trace('Entering updateState');
         log.debug({
             address: this.i2cAddress
         }, 'Joining i2C bus');
@@ -157,147 +300,30 @@ class CoopController {
             device: '/dev/i2c-1',
             debug: false
         }); // point to your i2c address, debug provides REPL interface
-        async.whilst(
-            () => {
-                return true;
-            },
-            (callback) => {
-                log.trace({
-                    commandLength: this.commandQueue.length
-                }, 'Servicing queued commands');
-                var currentCommandQueue = _.clone(this.commandQueue);
-                this.commandQueue = [];
-                var manualCommandPromises = [];
-                for(var command of currentCommandQueue) {
-                    manualCommandPromises.push(this.sendCommand(wire, command.command, command.args).then((data) => {
-                            if (command.command === this.commands.reset) {
-                                this.state.uptime = -1;
-                            }
-                            command.resolve(data);
-                        }).catch((err) => {
-                            log.error({
-                                err: err
-                            }, 'Error sending command');
-                            command.reject(err);
-                            // always keep going even if error;
-                        }).delay(delayBetween));
-                }
 
-                Promise.all(manualCommandPromises).then(() => {
-                    // now start repeating automatic command loop
-                    log.trace('Reading uptime');
-                    this.sendCommand(wire, this.commands.readUptime, []).then((uptime) => {
-                        if (uptime > this.longestUptime) {
-                            this.longestUptime = uptime;
-                        }
-                        if (uptime < this.state.uptime && uptime > 0 && this.state.uptime < (Math.pow(2, 32) - 10000)) {
-                            this.autoResetCount++;
-                            log.error({
-                                uptime: uptime,
-                                lastUptime: this.state.uptime
-                            }, 'Coop controller reset');
-                        }
-                        this.state.uptime = uptime;
-                    }).catch((err) => {
-                        log.error('Error reading uptime');
-                        // always keep going even if error
-                    }).delay(delayBetween).then(() => {
-                        log.trace('Reading door state');
-                        return this.sendCommand(wire, this.commands.readDoor, []).then((door) => {
-                            // first lets compare current state against previous state and send a notification of state change if necessary
-                            if (this.lastNonErrorDoorState === this.doorStates.transitioning) {
-                                if (door === this.doorStates.open) {
-                                    log.info('Door is now open');
-                                    if (this.enableNotify === true) {
-                                        this.notifyService.notifyAll('Coop door opened.')
-                                            .then(() => {
-                                                log.info('Notification sent');
-                                            }).catch((err) => {
-                                                log.error({
-                                                    err: err
-                                                }, 'Error sending notification');
-                                            });
-                                    }
-                                } else if (door === this.doorStates.closed) {
-                                    log.info('Door is now closed');
-                                    if (this.enableNotify === true) {
-                                        this.notifyService.notifyAll('Coop door closed.')
-                                            .then(() => {
-                                                log.info('Notification sent');
-                                            }).catch((err) => {
-                                                log.error({
-                                                    err: err
-                                                }, 'Error sending notification');
-                                            });
-                                    }
-                                } else if (door === this.doorStates.transitioning) {
-                                    log.info('Door is transitioning');
-                                } else {
-                                    log.error('Invalid door state received');
-                                }
-                            }
-                            if (door !== this.doorStates.open && door !== this.doorStates.closed) {
-                                if (door === this.doorStates.transitioning) {
-                                    log.info('Door is transitioning');
-                                    this.lastNonErrorDoorState = this.state.door = door;
-                                } else {
-                                    log.error('Door is in invalid state');
-                                    this.notifyService.notifyAll('Coop door error.')
-                                        .then(() => {
-                                            log.info('Notification sent');
-                                        }).catch((err) => {
-                                            log.error({
-                                                err: err
-                                            }, 'Error sending notification');
-                                        });
-                                }
-                            } else {
-                                this.lastNonErrorDoorState = this.state.door = door;
-                            }
-                        }).catch((err) => {
-                            log.error('Error reading door');
-                            this.state.door = -1;
-                            // always keep going even if error
-                        });
-                    }).delay(delayBetween).then(() => {
-                        log.trace('Reading override mode');
-                        return this.sendCommand(wire, this.commands.readMode, []).then((mode) => {
-                            this.state.mode = mode;
-                            if (this.state.mode != this.lastMode) {
-                                log.info({
-                                    mode: this.state.mode
-                                }, 'Door mode changed');
-                                this.lastMode = this.state.mode;
-                            }
-                        }).catch((err) => {
-                            log.error('Error reading override mode');
-                            this.state.mode = -1;
-                            // always keep going even if error
-                        });
-                    }).delay(delayBetween).then(() => {
-                        log.trace('checking door');
-                        return this.checkDoor(wire, this.state.door).catch((err) => {
-                            log.error('Error checking door');
-                            // always keep going even if error
-                        });
-                    }).then(() => {
-                        log.trace('sync finished successfully');
-                    }).catch((err) => {
-                        log.error({
-                            err: err
-                        }, 'sync finished with error');
-                        // always keep going even if error
-                    }).delay(1000).then(() => {
-                        callback();
-                    });
-                });
-            },
-            (err) => {
-                // this should never stop
-                log.error({
-                    err: err
-                }, 'Error in syncLoop');
-            });
+        return this.syncLoop(wire);
+    }
+
+    // repeatedly update all of the readable state from the coop
+    syncLoop(wire) {
+        return this.sync(wire).then(() => {
+            log.trace('sync finished successfully');
+        }).catch((err) => {
+            log.error({
+                err: err
+            }, 'sync finished with error');
+            // always keep going even if error
+        }).delay(1000).then(() => {
+            // if the last successful time we checked and veified the door state was greater than a minute
+            // force a reset of the coop controller
+            var now = new Date();
+            if((now.getTime() - this.lastSuccessfulCheckDoor.getTime()) > 60000) {
+                log.info('Its been longer than one minute since successful check door; waiting 6 seconds to let the watchdog timer reset controller');
+                return Promise.delay(360000);
+            }
+        }).then(() => {
+            return this.syncLoop(wire);
+        });
     }
 
     requestCommand(command, args) {
