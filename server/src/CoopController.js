@@ -480,7 +480,7 @@ class CoopController {
             });
         } else if (closingTime !== null && openingTime !== null) {
             // if we have an auto open time and close time and there is no active manual door command
-            if (currentMinutes < openingTime || currentMinutes > closingTime) {
+            if (currentMinutes < openingTime || currentMinutes >= closingTime) {
                 log.trace('Sending command to close door');
                 // we need to close the door
                 return this.sendCommand(wire, this.commands.closeDoor, []).then(() => {
