@@ -15,19 +15,12 @@ describe('CoopController', () => {
         hour: 5,
         minute: 45
     };
-    var mockWeatherService = {
-        getSunset: function() {
-            return testSunset;
-        },
-        getSunrise: function() {
-            return testSunrise;
-        }
-    };
+
     var mockNotifyService = {};
     var config = {
         enableNotify: true,
-        sunriseDeltaMinutes: 20,
-        sunsetDeltaMinutes: 20
+        latitude: 35,
+        longitude: -79
     };
 
     it('should initialize properly', () => {
@@ -42,9 +35,9 @@ describe('CoopController', () => {
                 }
             };
         };
-        var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
-        assert.equal(coopController.getClosingTime(), testSunset.hour * 60 + testSunset.minute + config.sunsetDeltaMinutes);
-        assert.equal(coopController.getOpeningTime(), testSunrise.hour * 60 + testSunrise.minute + config.sunriseDeltaMinutes);
+        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var now = new Date();
+        assert(coopController.getClosingTime() > coopController.getOpeningTime());
         assert.equal(coopController.isClosing(), false);
         assert.equal(coopController.isOpening(), false);
         assert.equal(coopController.getReadErrorCount(), 0);
@@ -72,7 +65,7 @@ describe('CoopController', () => {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, mockNotifyService, mockI2c);
         return coopController.closeDoor().then((data) => {
             assert.equal(data, 2);
             assert.equal(coopController.readDoor(), 2);
@@ -89,7 +82,7 @@ describe('CoopController', () => {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, mockNotifyService, mockI2c);
         return coopController.openDoor().then((data) => {
             assert.equal(data, 0);
             assert.equal(coopController.readDoor(), 0);
@@ -106,7 +99,7 @@ describe('CoopController', () => {
                 callback(new Error('i2c bus error'));
             }
         }
-        var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, mockNotifyService, mockI2c);
         return coopController.openDoor().then(() => {
             assert.fail('Expected open door command to return error');
         }).catch((err) => {
@@ -126,7 +119,7 @@ describe('CoopController', () => {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, mockNotifyService, mockI2c);
         return coopController.echo('test').then((data) => {
             assert.equal(data, 1);
         });
@@ -142,7 +135,7 @@ describe('CoopController', () => {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, mockNotifyService, mockI2c);
         return coopController.reset().then((data) => {
             assert.equal(data, 5);
         });
@@ -158,7 +151,7 @@ describe('CoopController', () => {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockWeatherService, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, mockNotifyService, mockI2c);
         return coopController.autoDoor().then((data) => {
             assert.equal(data, 7);
         });

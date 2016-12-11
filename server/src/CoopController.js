@@ -1,8 +1,9 @@
 'use strict';
 
 var _ = require('lodash'),
-    Promise = require('bluebird'),
     i2c = require('./i2cWrapper.js'),
+    Promise = require('bluebird'),
+    suncalc = require('suncalc'),
     log = require('./logger.js')();
 
 // config: key/value object with sunsetDeltaMinutes, sunriseDeltaMinutes, enableMailNotify
@@ -11,7 +12,7 @@ var _ = require('lodash'),
 // i2c: i2c wire wrapper with read/writeBytes methods
 class CoopController {
 
-    constructor(config, weatherService, notifyService, customI2c) {
+    constructor(config, notifyService, customI2c) {
         log.info('Initializing coop controller');
         if (customI2c) {
             log.info('Using custom i2c implementation');
@@ -25,9 +26,8 @@ class CoopController {
             address: this.i2cAddress
         }, 'Using i2C address');
         this.messageInProgress = false;
-        this.sunsetDeltaMinutes = config.sunsetDeltaMinutes;
-        this.sunriseDeltaMinutes = config.sunriseDeltaMinutes;
-        this.weatherService = weatherService;
+        this.longitude = config.longitude;
+        this.latitude = config.latitude;
         this.enableNotify = config.enableNotify;
         this.notifyService = notifyService;
         this.commandQueue = [];
@@ -317,7 +317,7 @@ class CoopController {
             // if the last successful time we checked and veified the door state was greater than a minute
             // force a reset of the coop controller
             var now = new Date();
-            if((now.getTime() - this.lastSuccessfulCheckDoor.getTime()) > 60000) {
+            if ((now.getTime() - this.lastSuccessfulCheckDoor.getTime()) > 60000) {
                 log.info('Its been longer than one minute since successful check door; waiting 6 seconds to let the watchdog timer reset controller');
                 return Promise.delay(360000);
             }
@@ -412,33 +412,42 @@ class CoopController {
         return currentTime.getHours() * 60 + currentTime.getMinutes();
     }
 
+    getClosingTime() {
+        log.trace('Entering getClosingTime');
+        var times = suncalc.getTimes(new Date(), this.latitude, this.longitude);
+        var sunsetMinutes = times.dusk.getHours() * 60 + times.dusk.getMinutes();
+        return sunsetMinutes;
+    }
+
+    getOpeningTime() {
+        log.trace('Entering getOpeningTime');
+        var times = suncalc.getTimes(new Date(), this.latitude, this.longitude);
+        var sunriseMinutes = times.sunrise.getHours() * 60 + times.sunrise.getMinutes();
+        return sunriseMinutes;
+    }
+
     getDoorCommandExpiration() {
         log.trace('Entering getDoorCommandExpiration');
         var currentTime = new Date();
-        var sunrise = this.weatherService.getSunrise();
-        var sunset = this.weatherService.getSunset();
-        var currentMins = this.getCurrentMinutes(currentTime);
+        var times = suncalc.getTimes(currentTime, this.latitude, this.longitude);
         var ret = null;
-        if (currentMins <= this.getOpeningTime()) {
+        if (currentTime.getTime() <= times.sunrise.getTime()) {
             // today sunrise
-            ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
-            ret.setTime(ret.getTime() + this.sunriseDeltaMinutes * 60 * 1000);
+            ret = times.sunrise;
             log.trace({
                 ret: ret
             }, 'Returning from getDoorCommandExpiration with todays opening time');
             return ret;
-        } else if (currentMins > this.getOpeningTime() && currentMins < this.getClosingTime()) {
+        } else if (currentTime.getTime() > times.sunrise.getTime() && currentTime.getTime() < times.dusk.getTime()) {
             // today sunset
-            ret = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunset.hour, sunset.minute);
-            ret.setTime(ret.getTime() + this.sunsetDeltaMinutes * 60 * 1000);
+            ret = times.dusk;
             log.trace({
                 ret: ret
             }, 'Returning from getDoorCommandExpiration with todays closing time');
             return ret;
         }
         // else tomorrow opening time
-        var todaySunrise = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), sunrise.hour, sunrise.minute);
-        ret = new Date(todaySunrise.getTime() + (this.sunsetDeltaMinutes * 60 * 1000) + (24 * 60 * 60 * 1000));
+        ret = new Date(times.sunrise.getTime() + (24 * 3600 * 1000));
         log.trace({
             ret: ret
         }, 'Returning from getDoorCommandExpiration with tomorrows sunrise');
@@ -458,10 +467,6 @@ class CoopController {
             this.activeDoorCommand = -1;
             this.doorCommandExpiration = null;
         }
-        var currentMinutes = this.getCurrentMinutes(currentTime);
-
-        var openingTime = this.getOpeningTime();
-        var closingTime = this.getClosingTime();
 
         if (this.activeDoorCommand !== -1) {
             // there is an active manual door command, so honor it
@@ -476,9 +481,10 @@ class CoopController {
                 }, 'Error sending manual door commands');
                 throw err;
             });
-        } else if (closingTime !== null && openingTime !== null) {
+        } else {
+            var times = suncalc.getTimes(new Date(), this.latitude, this.longitude);
             // if we have an auto open time and close time and there is no active manual door command
-            if (currentMinutes < openingTime || currentMinutes >= closingTime) {
+            if (currentTime.getTime() < times.sunrise.getTime() || currentTime.getTime() >= times.dusk.getTime()) {
                 log.trace('Sending command to close door');
                 // we need to close the door
                 return this.sendCommand(wire, this.commands.closeDoor, []).then(() => {
@@ -501,33 +507,7 @@ class CoopController {
                     throw err;
                 });
             }
-        } else {
-            var msg = 'Did not have a valid closing or opening time';
-            log.warn(msg);
-            Promise.reject(new Error(msg));
         }
-    }
-
-    getClosingTime() {
-        log.trace('Entering getClosingTime');
-        var ret = null;
-        var sunset = this.weatherService.getSunset();
-        if (sunset) {
-            var sunsetMinutes = Number(sunset.hour) * 60 + Number(sunset.minute);
-            ret = sunsetMinutes + this.sunsetDeltaMinutes;
-        }
-        return ret;
-    }
-
-    getOpeningTime() {
-        log.trace('Entering getOpeningTime');
-        var ret = null;
-        var sunrise = this.weatherService.getSunrise();
-        if (sunrise) {
-            var sunriseMinutes = Number(sunrise.hour) * 60 + Number(sunrise.minute);
-            ret = sunriseMinutes + this.sunriseDeltaMinutes;
-        }
-        return ret;
     }
 
     getReadErrorCount() {

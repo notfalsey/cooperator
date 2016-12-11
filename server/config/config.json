@@ -2,21 +2,8 @@
     "httpsPort": 9443,
     "state": "NC",
     "city": "Carrboro",
-    "wundergroundApiKey": "?",
-    "defaultWeatherData": {
-        "sun_phase": {
-            "sunset": {
-                "hour": 20,
-                "minute": 15
-            },
-            "sunrise": {
-                "hour": 6,
-                "minute": 15
-            }
-        }
-    },
-    "sunriseDeltaMinutes": -30,
-    "sunsetDeltaMinutes": 30,
+    "latitude": 35.910144,
+    "longitude": -79.075289,
     "i2cAddress": 5,
     "logging": {
         "level": "info",
@@ -29,10 +16,8 @@
     "googleOauthClientId": "?",
     "googleOauthClientSecret": "?",
     "googleCallbackUrl": "?",
-    "allowedUsers": [],
+    "allowedUsers": ["somebody@gmail.com"],
     "enableNotify": true,
-    "mailRecipients": [],
-    "mailFrom": "?",
-    "mailDomain": "?",
-    "mailApiKey": "?"
+    "textHost": "textbelt.com",
+    "textRecipients": ["5551237777"]
 }

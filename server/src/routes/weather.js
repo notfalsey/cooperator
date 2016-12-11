@@ -1,8 +1,9 @@
 'use strict';
 
-var log = require('../logger.js')();
+var suncalc = require('suncalc'),
+    log = require('../logger.js')();
 
-function setup(app, url, weatherService) {
+function setup(app, url, latitude, longitude) {
 
     function end(res) {
         res.end();
@@ -15,7 +16,12 @@ function setup(app, url, weatherService) {
         log.trace({
             req: req
         }, 'Entering get ' + url + '/sunrise');
-        var sunrise = weatherService.getSunrise();
+        var times = suncalc.getTimes(new Date(), latitude, longitude);
+        var sunrise = {
+            hour: times.sunrise.getHours(),
+            minute: times.sunrise.getMinutes()
+        };
+
         log.debug({
             sunrise: sunrise
         }, 'Read sunrise');
@@ -27,19 +33,16 @@ function setup(app, url, weatherService) {
         log.trace({
             req: req
         }, 'Entering get ' + url + '/sunset');
-        var sunset = weatherService.getSunset();
+        var times = suncalc.getTimes(new Date(), latitude, longitude);
+        var sunset = {
+            hour: times.dusk.getHours(),
+            minute: times.dusk.getMinutes()
+        };
+
         log.debug({
             sunset: sunset
         }, 'Read sunset');
         res.status(200).json(sunset);
-        end(res);
-    });
-
-    app.get(url + '/errors', function(req, res) {
-        log.trace({
-            req: req
-        }, 'Entering get ' + url + '/errors');
-        res.status(200).json(weatherService.getErrorCount());
         end(res);
     });
 }

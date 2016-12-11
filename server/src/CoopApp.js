@@ -11,7 +11,6 @@ var Promise = require('bluebird'),
     CoopController = require('./CoopController.js'),
     NotifyService = require('./NotifyService.js'),
     VideoService = require('./VideoService.js'),
-    WeatherService = require('./WeatherService.js'),
     passport = require('passport'),
     session = require('express-session'),
     GoogleStrategy = require('passport-google-oauth20').Strategy,
@@ -19,6 +18,12 @@ var Promise = require('bluebird'),
 
 function configure(app, config) {
     log.trace('Configuring coop app');
+    app.use(function(req, res, next) {
+        log.trace({
+            req: req
+        }, 'received request');
+        next();
+    });
     app.use(cookieParser());
     app.use(bodyParser.json()); // for parsing application/json
     app.use(flash());
@@ -36,6 +41,7 @@ function configure(app, config) {
     app.set('trust proxy', 1); // trust first proxy
 
     if (!config.hasOwnProperty('doAuth') || config.doAuth === true) {
+        log.trace('authenticating user');
         // Passport session setup.
         //   To support persistent login sessions, Passport needs to be able to
         //   serialize users into and deserialize users out of the session.  Typically,
@@ -63,6 +69,9 @@ function configure(app, config) {
                     profile: profile
                 }, 'Got google profile');
                 for (var i = 0; i < profile.emails.length; i++) {
+                    log.trace({
+                        user: profile.emails[i].value
+                    }, 'Checking if user is authorized');
                     if (config.allowedUsers.indexOf(profile.emails[i].value) !== -1) {
                         log.trace({
                             email: profile.emails[i].value
@@ -142,12 +151,11 @@ function configure(app, config) {
 
     app.use(express.static(props.getStaticFilesDir()));
 
-    var weatherService = new WeatherService(config);
     var notifyService = new NotifyService(config);
-    var coopController = new CoopController(config, weatherService, notifyService);
+    var coopController = new CoopController(config, notifyService);
     require('./routes/coop.js')(app, '/coop', coopController);
     require('./routes/video.js')(app, '/video', new VideoService(config));
-    require('./routes/weather.js')(app, '/weather', weatherService);
+    require('./routes/weather.js')(app, '/weather', config.latitude, config.longitude);
 }
 
 class CoopApp {

@@ -13,7 +13,8 @@
     "lodash": "^4.17.2",
     "mongoose": "^4.6.5",
     "passport": "^0.3.2",
-    "passport-google-oauth20": "^1.0.0"
+    "passport-google-oauth20": "^1.0.0",
+    "suncalc": "^1.7.0"
   },
   "optionalDependencies": {
     "i2c": "0.2.3"
