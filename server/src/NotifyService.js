@@ -35,15 +35,21 @@ class NotifyService {
             };
 
             var req = http.request(parms, (resp) => {
+                log.trace({
+                    statusCode: resp.statusCode
+                }, 'Received notification response');
                 resp.on('data', (data) => {});
                 resp.on('end', () => {
-                    log.info({
-                        message: message,
-                        number: number
-                    }, 'Sent notification successfully');
                     if (resp.statusCode >= 200 && resp.statusCode < 300) {
+                        log.info({
+                            message: message,
+                            number: number
+                        }, 'Sent notification successfully');
                         resolve();
                     } else {
+                        log.error({
+                            statusCode: resp.statusCode
+                        }, 'Notification failed');
                         reject(new Error('Notification failed.'));
                     }
                 });
