@@ -36,7 +36,7 @@ class CoopController {
         this.autoResetCount = 0;
         this.lastSuccessfulRead = -1;
         this.lastSuccessfulWrite = -1;
-        this.lastSuccessfulCheckDoor = new Date();
+        this.lastSuccessfulDoorCommand = new Date();
         this.lastError = -1;
         this.longestUptime = 0;
         this.timeToTransition = 15000;
@@ -106,6 +106,9 @@ class CoopController {
                             args: args
                         }, 'Wrote data to i2c bus successfully');
                         this.lastSuccessfulWrite = new Date();
+                        if (command === this.commands.openDoor || command === this.commands.closeDoor) {
+                            this.lastSuccessfulDoorCommand = new Date();
+                        }
                         // need to delay nefore reading or it causes errors (probably due to long distance)
                         setTimeout(() => {
                             wire.read(4, (err, readBytes) => {
@@ -281,9 +284,7 @@ class CoopController {
                 });
             }).delay(delayBetween).then(() => {
                 log.trace('checking door');
-                return this.checkDoor(wire, this.state.door).then(() => {
-                    this.lastSuccessfulCheckDoor = new Date();
-                }).catch((err) => {
+                return this.checkDoor(wire, this.state.door).catch((err) => {
                     log.error('Error checking door');
                     // always keep going even if error
                 });
@@ -317,7 +318,7 @@ class CoopController {
             // if the last successful time we checked and veified the door state was greater than a minute
             // force a reset of the coop controller
             var now = new Date();
-            if ((now.getTime() - this.lastSuccessfulCheckDoor.getTime()) > 60000) {
+            if ((now.getTime() - this.lastSuccessfulDoorCommand.getTime()) > 60000) {
                 log.info('Its been longer than one minute since successful check door; waiting 6 seconds to let the watchdog timer reset controller');
                 return Promise.delay(360000);
             }
