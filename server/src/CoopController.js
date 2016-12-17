@@ -45,6 +45,7 @@ class CoopController {
         this.lastNonErrorDoorState = null;
         this.lastMode = null;
         this.delayBetween = 100;
+        this.lastMalfunctionAlertSent = new Date(0);
 
         this.doorStates = {
             open: 0,
@@ -158,7 +159,7 @@ class CoopController {
                 if (door === this.doorStates.open) {
                     log.info('Door is now open');
                     if (this.enableNotify === true) {
-                        this.notifyService.notifyAll('Coop door opened.')
+                        this.notifyService.notifyAll('Coop door opened at ' + new Date() + '.')
                             .then(() => {
                                 log.info('Notification sent');
                             }).catch((err) => {
@@ -170,7 +171,7 @@ class CoopController {
                 } else if (door === this.doorStates.closed) {
                     log.info('Door is now closed');
                     if (this.enableNotify === true) {
-                        this.notifyService.notifyAll('Coop door closed.')
+                        this.notifyService.notifyAll('Coop door closed at ' + new Date() + '.')
                             .then(() => {
                                 log.info('Notification sent');
                             }).catch((err) => {
@@ -191,9 +192,44 @@ class CoopController {
                     this.lastNonErrorDoorState = this.state.door = door;
                 } else {
                     log.error('Door is in invalid state');
+                    this.state.door = door;
                 }
             } else {
                 this.lastNonErrorDoorState = this.state.door = door;
+            }
+        }).finally(() => {
+            // if the door is not in its scheduled state then send an notification every 5 minutes if enabled
+            if (this.enableNotify === true && this.lastNonErrorDoorState !== this.getScheduledDoorState()) {
+                var now = new Date();
+                var timeSinceLastAlert = now.getTime() - this.lastMalfunctionAlertSent.getTime();
+                // if time since last alert is more than 5 minutes
+                if (timeSinceLastAlert > 300000) {
+                    var msg = 'Coop door is malfunctioning!  The time is ' + new Date() + ' and the door is still ';
+                    switch (this.lastNonErrorDoorState) {
+                        case this.doorStates.open:
+                            msg += 'open!';
+                            break;
+                        case this.doorStates.transitioning:
+                            msg += 'transitioning!';
+                            break;
+                        case this.doorStates.closed:
+                            msg += 'closed!';
+                            break;
+                        default:
+                            msg += 'in an unknown position!';
+                            break;
+                    }
+                    log.error(msg);
+                    return this.notifyService.notifyAll(msg)
+                        .then(() => {
+                            log.info('Malfunction notification sent');
+                            this.lastMalfunctionAlertSent = new Date();
+                        }).catch((err) => {
+                            log.error({
+                                err: err
+                            }, 'Error sending malfunction notification');
+                        });
+                }
             }
         });
     }
@@ -461,6 +497,16 @@ class CoopController {
         return ret;
     }
 
+    getScheduledDoorState() {
+        var currentTime = new Date();
+        var times = suncalc.getTimes(new Date(), this.latitude, this.longitude);
+        if (currentTime.getTime() < times.sunrise.getTime() || currentTime.getTime() >= times.dusk.getTime()) {
+            return this.doorStates.closed;
+        } else {
+            return this.doorStates.open;
+        }
+    }
+
     checkDoor(wire) {
         log.trace('Entering checkDoor');
         var currentTime = new Date();
@@ -488,9 +534,8 @@ class CoopController {
                 return Promise.reject(new Error(msg));
             });
         } else {
-            var times = suncalc.getTimes(new Date(), this.latitude, this.longitude);
-            // if we have an auto open time and close time and there is no active manual door command
-            if (currentTime.getTime() < times.sunrise.getTime() || currentTime.getTime() >= times.dusk.getTime()) {
+            // there is not an active manual door command, so if we are scheduled to be closed, then send the close command
+            if (this.getScheduledDoorState() === this.doorStates.closed) {
                 log.trace('Sending command to close door');
                 // we need to close the door
                 return this.sendCommand(wire, this.commands.closeDoor, []).then(() => {
@@ -503,6 +548,7 @@ class CoopController {
                     return Promise.reject(new Error(msg));
                 });
             } else {
+                // if we should be open, then send the open command
                 log.trace('Sending command to open door');
                 // we need to open the door
                 return this.sendCommand(wire, this.commands.openDoor, []).then(() => {

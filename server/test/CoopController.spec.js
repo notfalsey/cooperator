@@ -16,7 +16,12 @@ describe('CoopController', function() {
         minute: 45
     };
 
-    var mockNotifyService = {};
+    class mockNotifyService {
+        notifyAll() {
+            return Promise.resolve();
+        }
+    }
+
     var config = {
         enableNotify: true,
         latitude: 35,
@@ -46,8 +51,8 @@ describe('CoopController', function() {
         CoopController = require('../src/CoopController.js');
         var now = new Date();
         sunCalcMock.setTimes({
-            dusk: new Date(now.getTime() + 10 * 3600 * 1000),
-            sunrise: new Date(now.getTime() - 2 * 3600 * 1000)
+            dusk: new Date('2016-12-15T20:00:00.00Z'),
+            sunrise: new Date('2016-12-15T07:00:00.00Z'),
         });
     });
 
@@ -72,7 +77,6 @@ describe('CoopController', function() {
             };
         };
         var coopController = new CoopController(config, mockNotifyService, mockI2c);
-        var now = new Date();
         assert(coopController.getClosingTime() > coopController.getOpeningTime());
         assert.equal(coopController.isClosing(), false);
         assert.equal(coopController.isOpening(), false);
@@ -101,7 +105,7 @@ describe('CoopController', function() {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, new mockNotifyService(), mockI2c);
         return coopController.closeDoor().then((data) => {
             assert.equal(data, 2);
         }).then(() => {
@@ -119,7 +123,7 @@ describe('CoopController', function() {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, new mockNotifyService(), mockI2c);
         return coopController.openDoor().then((data) => {
             assert.equal(data, 0);
             assert.equal(coopController.readDoor(), 0);
@@ -136,7 +140,7 @@ describe('CoopController', function() {
                 callback(new Error('i2c bus error'));
             }
         }
-        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, new mockNotifyService(), mockI2c);
         return coopController.openDoor().then(() => {
             assert.fail('Expected open door command to return error');
         }).catch((err) => {
@@ -156,7 +160,7 @@ describe('CoopController', function() {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, new mockNotifyService(), mockI2c);
         return coopController.echo('test').then((data) => {
             assert.equal(data, 1);
         });
@@ -172,7 +176,7 @@ describe('CoopController', function() {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, new mockNotifyService(), mockI2c);
         return coopController.reset().then((data) => {
             assert.equal(data, 5);
         });
@@ -188,7 +192,7 @@ describe('CoopController', function() {
                 callback(null, response);
             }
         }
-        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, new mockNotifyService(), mockI2c);
         return coopController.autoDoor().then((data) => {
             assert.equal(data, 7);
         });
@@ -209,7 +213,7 @@ describe('CoopController', function() {
         var wire = new mockI2c();
         sunCalcMock.setTimes(times);
 
-        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var coopController = new CoopController(config, new mockNotifyService(), mockI2c);
         var sendCommandSpy = sinon.spy(coopController, 'sendCommand');
 
         return coopController.checkDoor(wire).then(() => {
