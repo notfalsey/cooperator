@@ -1,11 +1,11 @@
 'use strict';
 
 var assert = require('assert'),
+    mockery = require('mockery'),
     Promise = require('bluebird'),
-    sinon = require('sinon-as-promised')(Promise),
-    CoopController = require('../src/CoopController.js');
+    sinon = require('sinon-as-promised')(Promise);
 
-describe('CoopController', () => {
+describe('CoopController', function() {
     var testSunset = {
         hour: 18,
         minute: 30
@@ -22,6 +22,42 @@ describe('CoopController', () => {
         latitude: 35,
         longitude: -79
     };
+    var CoopController = null;
+
+    var mockTimes = null;
+    var sunCalcMock = {
+        getTimes: function() {
+            return mockTimes;
+        },
+        setTimes: function(times) {
+            mockTimes = times;
+        }
+    };
+
+    before(() => {
+        mockery.enable({
+            warnOnReplace: false,
+            warnOnUnregistered: false
+        });
+    });
+
+    beforeEach(() => {
+        mockery.registerMock('suncalc', sunCalcMock);
+        CoopController = require('../src/CoopController.js');
+        var now = new Date();
+        sunCalcMock.setTimes({
+            dusk: new Date(now.getTime() + 10 * 3600 * 1000),
+            sunrise: new Date(now.getTime() - 2 * 3600 * 1000)
+        });
+    });
+
+    afterEach(() => {
+        mockery.deregisterAll();
+    });
+
+    after(() => {
+        mockery.disable();
+    });
 
     it('should initialize properly', () => {
         var mockI2c = function() {
@@ -68,6 +104,7 @@ describe('CoopController', () => {
         var coopController = new CoopController(config, mockNotifyService, mockI2c);
         return coopController.closeDoor().then((data) => {
             assert.equal(data, 2);
+        }).then(() => {
             assert.equal(coopController.readDoor(), 2);
         });
     });
@@ -157,4 +194,44 @@ describe('CoopController', () => {
         });
     });
 
+    function testCheckDoorOnTimeChange(times, expectedCommand) {
+        class mockI2c {
+            writeBytes(command, args, callback) {
+                // restore clock back so it will advance normally for the
+                // setTimeout for 50 secs coming before the read
+                callback();
+            }
+            read(numBytes, callback) {
+                var response = [];
+                callback(null, response);
+            }
+        }
+        var wire = new mockI2c();
+        sunCalcMock.setTimes(times);
+
+        var coopController = new CoopController(config, mockNotifyService, mockI2c);
+        var sendCommandSpy = sinon.spy(coopController, 'sendCommand');
+
+        return coopController.checkDoor(wire).then(() => {
+            assert.equal(sendCommandSpy.withArgs(wire, expectedCommand, []).calledOnce, true);
+        });
+    }
+
+    it('should automatically close door at dusk', () => {
+        var now = new Date();
+        // lets make dusk an hour from now, and then advance the fake clock to auto close the door
+        return testCheckDoorOnTimeChange({
+            dusk: new Date(now.getTime()),
+            sunrise: new Date(now.getTime() - 8 * 3600 * 1000),
+        }, 5);
+    });
+
+    it('should automatically open door at sunrise', () => {
+        var now = new Date();
+        // lets make dusk an hour from now, and then advance the fake clock to auto close the door
+        return testCheckDoorOnTimeChange({
+            dusk: new Date(now.getTime() + 10 * 3600 * 1000),
+            sunrise: new Date(now.getTime()),
+        }, 6);
+    });
 });

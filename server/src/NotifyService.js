@@ -7,6 +7,10 @@ var Promise = require('bluebird'),
 
 class NotifyService {
     constructor(config) {
+        log.trace({
+            recepients: config.textRecipients,
+            textHost: config.textHost
+        }, 'Constructing notification service');
         this.recipients = config.textRecipients;
         this.textHost = config.textHost;
     }
@@ -38,7 +42,11 @@ class NotifyService {
                 log.trace({
                     statusCode: resp.statusCode
                 }, 'Received notification response');
-                resp.on('data', (data) => {});
+                resp.on('data', (data) => {
+                    log.trace({
+                        data: data
+                    }, 'Notification response data');
+                });
                 resp.on('end', () => {
                     if (resp.statusCode >= 200 && resp.statusCode < 300) {
                         log.info({

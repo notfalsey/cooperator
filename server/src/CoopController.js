@@ -44,6 +44,7 @@ class CoopController {
         this.doorCommandExpiration = null;
         this.lastNonErrorDoorState = null;
         this.lastMode = null;
+        this.delayBetween = 100;
 
         this.doorStates = {
             open: 0,
@@ -190,14 +191,6 @@ class CoopController {
                     this.lastNonErrorDoorState = this.state.door = door;
                 } else {
                     log.error('Door is in invalid state');
-                    this.notifyService.notifyAll('Coop door error.')
-                        .then(() => {
-                            log.info('Notification sent');
-                        }).catch((err) => {
-                            log.error({
-                                err: err
-                            }, 'Error sending notification');
-                        });
                 }
             } else {
                 this.lastNonErrorDoorState = this.state.door = door;
@@ -249,46 +242,54 @@ class CoopController {
         });
     }
 
+    runAutoCommands(wire) {
+        // now start repeating automatic command loop
+        log.trace('Reading uptime');
+        return this.sendReadUptimeCommand(wire).catch((err) => {
+            log.error('Error reading uptime');
+            // always keep going even if error
+        }).delay(this.delayBetween).then(() => {
+            log.trace('Reading door state');
+            return this.sendReadDoorCommand(wire).catch((err) => {
+                log.error('Error reading door');
+                this.state.door = -1;
+                // always keep going even if error
+            });
+        }).delay(this.delayBetween).then(() => {
+            log.trace('Reading override mode');
+            return this.sendReadOverrideCommand(wire).catch((err) => {
+                log.error('Error reading override mode');
+                this.state.mode = -1;
+                // always keep going even if error
+            });
+        }).delay(this.delayBetween).then(() => {
+            log.trace('checking door');
+            return this.checkDoor(wire, this.state.door).catch((err) => {
+                log.error('Error checking door');
+                // always keep going even if error
+            });
+        });
+    }
+
     // update all of the readable state from the coop
     sync(wire) {
         log.trace({
             commandLength: this.commandQueue.length
         }, 'Servicing queued commands');
-        var delayBetween = 100;
+
         var currentCommandQueue = _.clone(this.commandQueue);
         this.commandQueue = [];
-        var manualCommandPromises = [];
-        for (var command of currentCommandQueue) {
-            manualCommandPromises.push(this.sendManualCommand(wire, command).delay(delayBetween));
-        }
 
-        return Promise.all(manualCommandPromises).then(() => {
-            // now start repeating automatic command loop
-            log.trace('Reading uptime');
-            return this.sendReadUptimeCommand(wire).catch((err) => {
-                log.error('Error reading uptime');
-                // always keep going even if error
-            }).delay(delayBetween).then(() => {
-                log.trace('Reading door state');
-                return this.sendReadDoorCommand(wire).catch((err) => {
-                    log.error('Error reading door');
-                    this.state.door = -1;
-                    // always keep going even if error
-                });
-            }).delay(delayBetween).then(() => {
-                log.trace('Reading override mode');
-                return this.sendReadOverrideCommand(wire).catch((err) => {
-                    log.error('Error reading override mode');
-                    this.state.mode = -1;
-                    // always keep going even if error
-                });
-            }).delay(delayBetween).then(() => {
-                log.trace('checking door');
-                return this.checkDoor(wire, this.state.door).catch((err) => {
-                    log.error('Error checking door');
-                    // always keep going even if error
-                });
-            });
+        return Promise.mapSeries(currentCommandQueue, (command) => {
+            return this.sendManualCommand(wire, command).delay(this.delayBetween);
+        }).then(() => {
+            log.trace('Manual commands ran successfully');
+        }).catch((err) => {
+            log.error({
+                err: err
+            }, 'Error running manual commands');
+        }).then(() => {
+            return this.runAutoCommands(wire);
         });
     }
 
@@ -319,8 +320,13 @@ class CoopController {
             // force a reset of the coop controller
             var now = new Date();
             if ((now.getTime() - this.lastSuccessfulDoorCommand.getTime()) > 60000) {
-                log.info('Its been longer than one minute since successful check door; waiting 6 seconds to let the watchdog timer reset controller');
-                return Promise.delay(360000);
+                // the watchdog timer resets if there is 5 seconds of no successful commands,
+                // so lets hold commands for 6 seconds
+                log.info('Its been longer than one minute since successful door command; waiting 6 seconds to let the watchdog timer reset controller');
+                return Promise.delay(6000).then(() => {
+                    // reset the last successful so we dont trigger another wait for at least a minute
+                    this.lastSuccessfulDoorCommand = new Date();
+                });
             }
         }).then(() => {
             return this.syncLoop(wire);
@@ -455,10 +461,8 @@ class CoopController {
         return ret;
     }
 
-    checkDoor(wire, state) {
-        log.trace({
-            state: state
-        }, 'Entering checkCoop');
+    checkDoor(wire) {
+        log.trace('Entering checkDoor');
         var currentTime = new Date();
         // check if last manual door command needs to expire
         if (this.activeDoorCommand !== -1 && currentTime.getTime() >= this.doorCommandExpiration.getTime()) {
@@ -477,10 +481,11 @@ class CoopController {
             return this.sendCommand(wire, this.activeDoorCommand, []).then(() => {
                 log.trace('Send manual door command');
             }).catch((err) => {
+                var msg = 'Error sending manual door commands';
                 log.error({
                     err: err
-                }, 'Error sending manual door commands');
-                throw err;
+                }, msg);
+                return Promise.reject(new Error(msg));
             });
         } else {
             var times = suncalc.getTimes(new Date(), this.latitude, this.longitude);
@@ -491,21 +496,23 @@ class CoopController {
                 return this.sendCommand(wire, this.commands.closeDoor, []).then(() => {
                     log.trace('Sent close coop door command');
                 }).catch((err) => {
+                    var msg = 'Error closing coop door';
                     log.error({
                         err: err
-                    }, 'Error closing coop door');
-                    throw err;
+                    }, msg);
+                    return Promise.reject(new Error(msg));
                 });
             } else {
                 log.trace('Sending command to open door');
                 // we need to open the door
-                return this.sendCommand(wire, this.commands.opemDoor, []).then(() => {
+                return this.sendCommand(wire, this.commands.openDoor, []).then(() => {
                     log.trace('Sent open coop door command');
                 }).catch((err) => {
+                    var msg = 'Error opening coop door';
                     log.error({
                         err: err
-                    }, 'Error opening coop door');
-                    throw err;
+                    }, msg);
+                    return Promise.reject(new Error(msg));
                 });
             }
         }
