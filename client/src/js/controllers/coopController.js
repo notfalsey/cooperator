@@ -139,7 +139,7 @@ angular.module(appName)
                 $scope.closeActive = true;
                 $interval(function() {
                     $scope.closeActive = false;
-                }, 20000, 1);
+                }, 30000, 1);
                 return coopService.commandDoor('close').then(function() {
                     $log.debug('Door close command sent successfully.');
                 }, function(err) {
@@ -151,7 +151,7 @@ angular.module(appName)
                 $scope.openActive = true;
                 $interval(function() {
                     $scope.openActive = false;
-                }, 20000, 1);
+                }, 30000, 1);
                 return coopService.commandDoor('open').then(function() {
                     $log.debug('Door open command sent successfully.');
                 }, function(err) {
@@ -163,7 +163,7 @@ angular.module(appName)
                 $scope.resetActive = true;
                 $interval(function() {
                     $scope.resetActive = false;
-                }, 20000, 1);
+                }, 30000, 1);
                 return coopService.reset().then(function() {
                     update();
                 }, function(err) {

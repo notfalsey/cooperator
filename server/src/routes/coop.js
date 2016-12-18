@@ -131,11 +131,13 @@ function setup(app, url, controller) {
                 req: req
             }, 'Entering get ' + url + '/door');
             var door = controller.readDoor();
-            var doorString = 'transitioning';
-            if (door === 0) {
+            var doorString = 'unknown';
+            if (door === 1) {
                 doorString = 'open';
-            } else if (door === 2) {
+            } else if (door === 64) {
                 doorString = 'closed';
+            } else if (door === 8) {
+                doorString = 'transitioning';
             }
             log.debug({
                 door: door,

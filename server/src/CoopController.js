@@ -48,9 +48,9 @@ class CoopController {
         this.lastMalfunctionAlertSent = new Date(0);
 
         this.doorStates = {
-            open: 0,
-            transitioning: 1,
-            closed: 2
+            open: 1,
+            transitioning: 8,
+            closed: 64
         };
 
         this.state = {
@@ -200,35 +200,37 @@ class CoopController {
         }).finally(() => {
             // if the door is not in its scheduled state then send an notification every 5 minutes if enabled
             if (this.enableNotify === true && this.lastNonErrorDoorState !== this.getScheduledDoorState()) {
-                var now = new Date();
-                var timeSinceLastAlert = now.getTime() - this.lastMalfunctionAlertSent.getTime();
-                // if time since last alert is more than 5 minutes
-                if (timeSinceLastAlert > 300000) {
-                    var msg = 'Coop door is malfunctioning!  The time is ' + new Date() + ' and the door is still ';
-                    switch (this.lastNonErrorDoorState) {
-                        case this.doorStates.open:
-                            msg += 'open!';
-                            break;
-                        case this.doorStates.transitioning:
-                            msg += 'transitioning!';
-                            break;
-                        case this.doorStates.closed:
-                            msg += 'closed!';
-                            break;
-                        default:
-                            msg += 'in an unknown position!';
-                            break;
+                if (!this.isDoorScheduledToBeTransitioning()) {
+                    var now = new Date();
+                    var timeSinceLastAlert = now.getTime() - this.lastMalfunctionAlertSent.getTime();
+                    // if time since last alert is more than 5 minutes
+                    if (timeSinceLastAlert > 300000) {
+                        var msg = 'Coop door is malfunctioning!  The time is ' + new Date() + ' and the door is still ';
+                        switch (this.lastNonErrorDoorState) {
+                            case this.doorStates.open:
+                                msg += 'open!';
+                                break;
+                            case this.doorStates.transitioning:
+                                msg += 'transitioning!';
+                                break;
+                            case this.doorStates.closed:
+                                msg += 'closed!';
+                                break;
+                            default:
+                                msg += 'in an unknown position!';
+                                break;
+                        }
+                        log.error(msg);
+                        return this.notifyService.notifyAll(msg)
+                            .then(() => {
+                                log.info('Malfunction notification sent');
+                                this.lastMalfunctionAlertSent = new Date();
+                            }).catch((err) => {
+                                log.error({
+                                    err: err
+                                }, 'Error sending malfunction notification');
+                            });
                     }
-                    log.error(msg);
-                    return this.notifyService.notifyAll(msg)
-                        .then(() => {
-                            log.info('Malfunction notification sent');
-                            this.lastMalfunctionAlertSent = new Date();
-                        }).catch((err) => {
-                            log.error({
-                                err: err
-                            }, 'Error sending malfunction notification');
-                        });
                 }
             }
         });
@@ -505,6 +507,21 @@ class CoopController {
         } else {
             return this.doorStates.open;
         }
+    }
+
+    isDoorScheduledToBeTransitioning() {
+        var currentTime = (new Date()).getTime();
+        var times = suncalc.getTimes(new Date(), this.latitude, this.longitude);
+        var sunrise = times.sunrise.getTime();
+        var dusk = times.dusk.getTime();
+        // allow 30 seconds for transition
+        var transitionTime = 30000;
+        if ((currentTime - sunrise) > 0 && (currentTime - sunrise) < transitionTime) {
+            return true;
+        } else if ((currentTime - dusk) > 0 && (currentTime - dusk) < transitionTime) {
+            return true;
+        }
+        return false;
     }
 
     checkDoor(wire) {
